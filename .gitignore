@@ -8,7 +8,7 @@ build/
 # TypeScript
 *.tsbuildinfo
 
-# Environment files
+# Environment files (IMPORTANT - secrets safe rahenge)
 .env
 .env.*
 
@@ -26,9 +26,5 @@ Thumbs.db
 .vscode/
 .idea/
 
-# Uploads (backend)
+# Backend uploads (user data ignore karna sahi hai)
 Backend/uploads/
-
-# Frontend & Backend node_modules
-Frontend/node_modules/
-Backend/node_modules/

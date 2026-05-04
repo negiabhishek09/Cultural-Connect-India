@@ -31,6 +31,8 @@ app.use(cors({
     const allowedOrigins = [
       "http://localhost:5173",
       "https://localhost:5173",
+      "https://cultural-connect-india.vercel.app",
+      
       process.env.FRONTEND_URL, // ✅ Render frontend URL env se aayegi
     ].filter(Boolean) as string[];
 

@@ -1,6 +1,6 @@
 // import { Request, Response } from "express";
 // import slugify from "slugify";
-// import { Event } from "../models/Event.model";
+// import { Event } from "../models/event.model";
 // import { sendWelcomeEmail, sendEventRegistrationEmail } from "../utils/Email"; 
 // import { State } from "../models/State.model";       
 // import { Category } from "../models/Category.model";
@@ -127,7 +127,7 @@
 import { Request, Response } from "express";
 import mongoose from "mongoose";
 import slugify from "slugify";
-import { Event } from "../models/Event.model";
+import { Event } from "../models/event.model";
 import { sendEventRegistrationEmail } from "../utils/email";
 
 // ✅ GET all events — stateId + featured + pagination

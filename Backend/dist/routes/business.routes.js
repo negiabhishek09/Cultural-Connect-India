@@ -1,0 +1,13 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const business_controller_1 = require("../controllers/business.controller");
+const auth_middleware_1 = require("../middleware/auth.middleware");
+const validation_middleware_1 = require("../middleware/validation.middleware");
+const router = (0, express_1.Router)();
+router.get('/', business_controller_1.getBusinesses);
+router.get('/:slug', business_controller_1.getBusinessBySlug);
+router.post('/', auth_middleware_1.protect, (0, auth_middleware_1.restrictTo)('BUSINESS_OWNER', 'ADMIN'), (0, validation_middleware_1.validate)(validation_middleware_1.createBusinessSchema), business_controller_1.createBusiness);
+router.patch('/:id', auth_middleware_1.protect, business_controller_1.updateBusiness);
+router.post('/:id/reviews', auth_middleware_1.protect, (0, validation_middleware_1.validate)(validation_middleware_1.addReviewSchema), business_controller_1.addReview);
+exports.default = router;

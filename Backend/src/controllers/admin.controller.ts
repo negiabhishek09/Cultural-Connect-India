@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import { User } from "../models/User.model";
 import { Product } from "../models/Product.model";
-import { Event } from "../models/Event.model";
+import { Event } from "../models/event.model";
 import { ExploreItem } from "../models/ExploreItem.model";
 import { Post } from "../models/Post.model";
 

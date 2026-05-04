@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { User } from '../models/User.model';
-import { Event } from '../models/Event.model';
+import { Event } from '../models/event.model';
 import { Business } from '../models/Business.model';
 import { Product } from '../models/Product.model';
 import { Post } from '../models/Post.model';

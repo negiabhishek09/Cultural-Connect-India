@@ -19,7 +19,11 @@ const transporter = nodemailer.createTransport({
 });
 transporter.verify((error) => {
   if (error) {
-    logger.error('❌ Brevo SMTP failed:', error.message);
+    console.log('SMTP ERROR:', error);
+    console.log('SMTP ERROR CODE:', (error as any).code);
+    console.log('SMTP ERROR COMMAND:', (error as any).command);
+    console.log('BREVO_USER:', process.env.BREVO_USER);
+    console.log('BREVO_PASS exists:', !!process.env.BREVO_PASS);
   } else {
     logger.info('✅ Brevo SMTP ready');
   }

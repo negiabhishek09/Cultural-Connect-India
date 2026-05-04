@@ -15,13 +15,9 @@ export function Community() {
   const [createPostModal, setCreatePostModal] = useState(false);
   const [commentInputs, setCommentInputs] = useState<{ [key: string]: string }>({});
   const [showComments, setShowComments] = useState<{ [key: string]: boolean }>({});
-  const [image, setImage] = useState<File | null>(null);
-  const [preview, setPreview] = useState<string | null>(null);
-  const [text, setText] = useState('');
 
   const fetchPosts = async () => {
     try {
-      // ✅ FIX: /community → /posts (AdminPanel delete bhi /posts se karta hai)
       const res = await API.get('/posts');
       setAllPosts(res.data.data || []);
     } catch (err) {
@@ -31,11 +27,14 @@ export function Community() {
 
   useEffect(() => {
     fetchPosts();
-
-    // ✅ FIX: Jab user admin tab se wapas aaye — fresh data aaye
     window.addEventListener('focus', fetchPosts);
     return () => window.removeEventListener('focus', fetchPosts);
   }, []);
+
+  // ✅ New post modal se create hone ke baad list mein add karo
+  const handlePostCreated = (newPost: any) => {
+    setAllPosts((prev) => [newPost, ...prev]);
+  };
 
   const handleToggleLike = async (postId: string) => {
     if (!user) { toast.error('Pehle login karo'); return; }
@@ -49,10 +48,8 @@ export function Community() {
     );
 
     try {
-      // ✅ FIX: /community/:id/like → /posts/:id/like
       await API.post(`/posts/${postId}/like`);
-    } catch (err) {
-      // Revert on failure
+    } catch {
       setAllPosts((prev) =>
         prev.map((p) =>
           p._id === postId
@@ -70,11 +67,7 @@ export function Community() {
     if (!commentText || !user) return;
 
     try {
-      // ✅ FIX: /posts/:id/comments — backend "content" expect karta hai
-      const res = await API.post(`/posts/${postId}/comments`, {
-        content: commentText,
-      });
-
+      const res = await API.post(`/posts/${postId}/comments`, { content: commentText });
       const savedComment = res.data.data;
       const newComment = {
         _id: savedComment._id,
@@ -93,10 +86,9 @@ export function Community() {
             : p
         )
       );
-
       setCommentInputs((prev) => ({ ...prev, [postId]: '' }));
       toast.success('Comment add ho gaya!');
-    } catch (err) {
+    } catch {
       toast.error('Comment save nahi hua, dobara try karo');
     }
   };
@@ -105,62 +97,12 @@ export function Community() {
     setShowComments((prev) => ({ ...prev, [postId]: !prev[postId] }));
   };
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setImage(file);
-      setPreview(URL.createObjectURL(file));
-    }
-  };
-
-  const handleCreatePost = async (e?: any) => {
-    e?.preventDefault();
-    if (!text.trim()) { toast.error('Kuch likho pehle'); return; }
-
-    try {
-      const formData = new FormData();
-      formData.append('caption', text);
-      if (image) formData.append('image', image);
-
-      // ✅ FIX: /community → /posts
-      const res = await API.post('/posts', formData);
-      setAllPosts((prev) => [res.data.data, ...prev]);
-      setText('');
-      setImage(null);
-      setPreview(null);
-      toast.success('Post create ho gayi!');
-    } catch (err: any) {
-      toast.error('Post nahi bani');
-    }
-  };
-
   return (
     <div className="min-h-screen bg-gray-50">
       <ModernNavbar />
 
       <div className="pt-28 pb-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-
-          {/* POST BOX */}
-          <div className="mb-10 bg-white p-6 rounded-2xl shadow">
-            <textarea
-              placeholder="Write something..."
-              value={text}
-              onChange={(e) => setText(e.target.value)}
-              className="w-full p-3 border rounded-xl mb-3"
-            />
-            <input type="file" accept="image/*" onChange={handleImageChange} />
-            {preview && (
-              <img src={preview} className="mt-3 w-40 rounded-lg" alt="preview" />
-            )}
-            <button
-              type="button"
-              onClick={handleCreatePost}
-              className="mt-3 px-5 py-2 bg-orange-600 text-white rounded-xl"
-            >
-              Post
-            </button>
-          </div>
 
           {/* HEADER */}
           <motion.div
@@ -216,27 +158,34 @@ export function Community() {
                       className="w-12 h-12 rounded-full object-cover ring-2 ring-orange-200"
                     />
                     <div className="flex-1">
-                      <h4 className="font-bold text-gray-900">
-                        {post.userId?.name || 'Unknown User'}
-                      </h4>
-                      <p className="text-sm text-gray-500">
-                        {post.userId?.location || 'India'}
-                      </p>
+                      <h4 className="font-bold text-gray-900">{post.userId?.name || 'Unknown User'}</h4>
+                      <p className="text-sm text-gray-500">{post.userId?.location || 'India'}</p>
                     </div>
                   </div>
 
-                  {/* Post image */}
-                  <div className="relative h-80 overflow-hidden">
-                    <ImageWithFallback
-                      src={post.image}
-                      alt={post.caption}
-                      className="w-full h-full object-cover"
-                    />
+                  {/* Media — image ya video */}
+                  <div className="relative h-80 overflow-hidden bg-gray-100">
+                    {post.mediaType === 'video' || post.video ? (
+                      <video
+                        src={post.video}
+                        controls
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <ImageWithFallback
+                        src={post.image}
+                        alt={post.caption}
+                        className="w-full h-full object-cover"
+                      />
+                    )}
                   </div>
 
                   {/* Caption */}
                   <div className="p-4">
                     <p className="text-gray-900">{post.caption}</p>
+                    {post.location && (
+                      <p className="text-sm text-gray-400 mt-1">📍 {post.location}</p>
+                    )}
                   </div>
 
                   {/* Actions */}
@@ -248,11 +197,7 @@ export function Community() {
                           onClick={() => handleToggleLike(post._id)}
                           className="flex items-center gap-1 text-gray-600"
                         >
-                          <Heart
-                            className={`w-5 h-5 transition-colors ${
-                              isLiked ? 'text-red-500 fill-red-500' : ''
-                            }`}
-                          />
+                          <Heart className={`w-5 h-5 transition-colors ${isLiked ? 'text-red-500 fill-red-500' : ''}`} />
                           <span>{likesCount}</span>
                         </button>
 
@@ -262,16 +207,12 @@ export function Community() {
                           className="flex items-center gap-1 text-gray-600"
                         >
                           <MessageCircle className="w-5 h-5" />
-                          <span>{post.comments?.length || 0}</span>
+                          <span>{post.comments?.length || post.commentCount || 0}</span>
                         </button>
                       </div>
 
                       <button type="button" onClick={() => toggleSave(post._id)}>
-                        <Bookmark
-                          className={`w-5 h-5 ${
-                            isSaved ? 'text-yellow-500 fill-yellow-500' : ''
-                          }`}
-                        />
+                        <Bookmark className={`w-5 h-5 ${isSaved ? 'text-yellow-500 fill-yellow-500' : ''}`} />
                       </button>
                     </div>
                   </div>
@@ -301,14 +242,9 @@ export function Community() {
                           placeholder="Comment likho..."
                           value={commentInputs[post._id] || ''}
                           onChange={(e) =>
-                            setCommentInputs((prev) => ({
-                              ...prev,
-                              [post._id]: e.target.value,
-                            }))
+                            setCommentInputs((prev) => ({ ...prev, [post._id]: e.target.value }))
                           }
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter') handleAddComment(post._id, e);
-                          }}
+                          onKeyDown={(e) => { if (e.key === 'Enter') handleAddComment(post._id, e); }}
                           className="flex-1 border rounded-lg px-3 py-1 text-sm"
                         />
                         <button
@@ -330,9 +266,11 @@ export function Community() {
 
       <Footer />
 
+      {/* ✅ onPostCreated callback — list mein turant add hoga */}
       <CreatePostModal
         isOpen={createPostModal}
         onClose={() => setCreatePostModal(false)}
+        onPostCreated={handlePostCreated}
       />
     </div>
   );

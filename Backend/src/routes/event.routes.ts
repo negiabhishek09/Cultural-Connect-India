@@ -16,14 +16,16 @@ import { protect, restrictTo } from '../middleware/auth.middleware';
 
 const router = Router();
 
+// ── Specific routes PEHLE — /:slug se upar rehne chahiye ──
+router.get('/my-registrations',           protect, getMyRegistrations);
+router.post('/register',                  registerForEvent);
+
 // ── Public ────────────────────────────────────────────────
-router.get('/',          getEvents);
-router.get('/:slug',     getEventBySlug);
-router.post('/register', registerForEvent);   // public — naam + email se register
+router.get('/',        getEvents);
+router.get('/:slug',   getEventBySlug);  // ⚠️ wildcard hamesha last mein
 
 // ── Logged-in user ────────────────────────────────────────
-router.get('/my-registrations',            protect, getMyRegistrations);
-router.delete('/:id/cancel-registration',  protect, cancelRegistration);
+router.delete('/:id/cancel-registration', protect, cancelRegistration);
 
 // ── Admin only ────────────────────────────────────────────
 router.post('/',        protect, restrictTo('ADMIN'), createEvent);

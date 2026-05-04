@@ -1,43 +1,59 @@
 import { motion, AnimatePresence } from 'motion/react';
-import { X, Image, Smile } from 'lucide-react';
+import { X, Image, Video, MapPin, Tag } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { useApp } from '../../context/AppContext';
+import { API } from '../../api/axios';
 
 interface CreatePostModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onPostCreated?: (post: any) => void;
 }
 
-export function CreatePostModal({ isOpen, onClose }: CreatePostModalProps) {
-  const { user, addPost } = useApp();
+export function CreatePostModal({ isOpen, onClose, onPostCreated }: CreatePostModalProps) {
+  const { user } = useApp();
   const [caption, setCaption] = useState('');
+  const [mediaType, setMediaType] = useState<'image' | 'video'>('image');
   const [imageUrl, setImageUrl] = useState('');
+  const [videoUrl, setVideoUrl] = useState('');
+  const [location, setLocation] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleClose = () => {
+    setCaption('');
+    setImageUrl('');
+    setVideoUrl('');
+    setLocation('');
+    setMediaType('image');
+    onClose();
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user) return;
+    if (!user) { toast.error('Pehle login karo'); return; }
+    if (!caption.trim()) { toast.error('Caption zaroori hai'); return; }
+    if (mediaType === 'image' && !imageUrl.trim()) { toast.error('Image URL daalo'); return; }
+    if (mediaType === 'video' && !videoUrl.trim()) { toast.error('Video URL daalo'); return; }
 
     setIsLoading(true);
+    try {
+      const payload: any = { caption };
+      if (mediaType === 'image') payload.image = imageUrl;
+      if (mediaType === 'video') payload.video = videoUrl;
+      if (location.trim()) payload.location = location;
 
-    setTimeout(() => {
-      addPost({
-        user: {
-          name: user.name,
-          avatar: user.avatar,
-          location: user.location,
-        },
-        image: imageUrl || 'https://images.unsplash.com/photo-1757237367150-3c134720f075?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxSYWphc3RoYW4lMjBJbmRpYSUyMHBhbGFjZSUyMGNvbG9yZnVsfGVufDF8fHx8MTc3NDk0NzY0Nnww&ixlib=rb-4.1.0&q=80&w=1080',
-        caption,
-      });
+      const res = await API.post('/posts', payload);
+      const newPost = res.data.data;
 
-      toast.success('Post created successfully!');
+      toast.success('Post create ho gayi!');
+      onPostCreated?.(newPost);
+      handleClose();
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || 'Post nahi bani, dobara try karo');
+    } finally {
       setIsLoading(false);
-      setCaption('');
-      setImageUrl('');
-      onClose();
-    }, 1000);
+    }
   };
 
   return (
@@ -49,7 +65,7 @@ export function CreatePostModal({ isOpen, onClose }: CreatePostModalProps) {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            onClick={onClose}
+            onClick={handleClose}
           />
           <motion.div
             className="relative bg-white rounded-3xl shadow-2xl p-8 max-w-lg w-full"
@@ -58,7 +74,7 @@ export function CreatePostModal({ isOpen, onClose }: CreatePostModalProps) {
             exit={{ opacity: 0, scale: 0.9, y: 20 }}
           >
             <button
-              onClick={onClose}
+              onClick={handleClose}
               className="absolute top-4 right-4 p-2 hover:bg-gray-100 rounded-full transition-colors"
             >
               <X className="w-5 h-5 text-gray-500" />
@@ -67,48 +83,123 @@ export function CreatePostModal({ isOpen, onClose }: CreatePostModalProps) {
             <h2 className="text-2xl font-bold text-gray-900 mb-6">Create New Post</h2>
 
             <form onSubmit={handleSubmit} className="space-y-4">
+
+              {/* Caption */}
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Caption
-                </label>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Caption</label>
                 <textarea
                   value={caption}
                   onChange={(e) => setCaption(e.target.value)}
                   placeholder="Share your cultural experience..."
                   className="w-full px-4 py-3 bg-gray-50 border-2 border-gray-200 rounded-xl focus:border-orange-500 focus:bg-white focus:outline-none resize-none"
-                  rows={4}
+                  rows={3}
                   required
                 />
               </div>
 
+              {/* Media Type Toggle */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Media Type</label>
+                <div className="flex gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setMediaType('image')}
+                    className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl border-2 font-medium text-sm transition-all ${
+                      mediaType === 'image'
+                        ? 'border-orange-500 bg-orange-50 text-orange-600'
+                        : 'border-gray-200 text-gray-500 hover:border-gray-300'
+                    }`}
+                  >
+                    <Image className="w-4 h-4" />
+                    Image
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setMediaType('video')}
+                    className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl border-2 font-medium text-sm transition-all ${
+                      mediaType === 'video'
+                        ? 'border-orange-500 bg-orange-50 text-orange-600'
+                        : 'border-gray-200 text-gray-500 hover:border-gray-300'
+                    }`}
+                  >
+                    <Video className="w-4 h-4" />
+                    Video
+                  </button>
+                </div>
+              </div>
+
+              {/* Image URL */}
+              {mediaType === 'image' && (
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Image URL</label>
+                  <div className="relative">
+                    <Image className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                    <input
+                      type="url"
+                      value={imageUrl}
+                      onChange={(e) => setImageUrl(e.target.value)}
+                      placeholder="https://example.com/image.jpg"
+                      className="w-full pl-12 pr-4 py-3 bg-gray-50 border-2 border-gray-200 rounded-xl focus:border-orange-500 focus:bg-white focus:outline-none"
+                    />
+                  </div>
+                  {imageUrl && (
+                    <img
+                      src={imageUrl}
+                      alt="preview"
+                      className="mt-2 w-full h-40 object-cover rounded-xl"
+                      onError={(e) => (e.currentTarget.style.display = 'none')}
+                    />
+                  )}
+                </div>
+              )}
+
+              {/* Video URL */}
+              {mediaType === 'video' && (
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Video URL</label>
+                  <div className="relative">
+                    <Video className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                    <input
+                      type="url"
+                      value={videoUrl}
+                      onChange={(e) => setVideoUrl(e.target.value)}
+                      placeholder="https://example.com/video.mp4"
+                      className="w-full pl-12 pr-4 py-3 bg-gray-50 border-2 border-gray-200 rounded-xl focus:border-orange-500 focus:bg-white focus:outline-none"
+                    />
+                  </div>
+                  {videoUrl && (
+                    <video
+                      src={videoUrl}
+                      controls
+                      className="mt-2 w-full rounded-xl max-h-40"
+                    />
+                  )}
+                  <p className="text-xs text-gray-500 mt-1">Direct .mp4 link ya hosted video URL</p>
+                </div>
+              )}
+
+              {/* Location */}
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Image URL (optional)
+                  Location <span className="text-gray-400 font-normal">(optional)</span>
                 </label>
                 <div className="relative">
-                  <Image className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                   <input
-                    type="url"
-                    value={imageUrl}
-                    onChange={(e) => setImageUrl(e.target.value)}
-                    placeholder="https://example.com/image.jpg"
+                    type="text"
+                    value={location}
+                    onChange={(e) => setLocation(e.target.value)}
+                    placeholder="Jaipur, Rajasthan"
                     className="w-full pl-12 pr-4 py-3 bg-gray-50 border-2 border-gray-200 rounded-xl focus:border-orange-500 focus:bg-white focus:outline-none"
                   />
                 </div>
-                <p className="text-xs text-gray-500 mt-1">Leave empty to use a default image</p>
               </div>
 
-              <div className="flex items-center gap-3 p-4 bg-orange-50 rounded-xl">
-                <Smile className="w-5 h-5 text-orange-600" />
-                <p className="text-sm text-gray-700">
-                  Share your amazing cultural experiences with the community!
-                </p>
-              </div>
-
+              {/* Buttons */}
               <div className="flex gap-3 pt-2">
                 <motion.button
                   type="button"
-                  onClick={onClose}
+                  onClick={handleClose}
                   className="flex-1 py-3 bg-gray-100 text-gray-700 rounded-xl font-semibold"
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}

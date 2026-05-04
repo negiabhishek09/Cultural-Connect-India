@@ -1,4 +1,8 @@
+// Post.model.ts — COMPLETE FILE (replace existing)
+
 import mongoose, { Document, Schema } from 'mongoose';
+
+export type PostMediaType = 'image' | 'video';
 
 export interface IComment {
   _id: mongoose.Types.ObjectId;
@@ -10,7 +14,9 @@ export interface IComment {
 export interface IPost extends Document {
   _id: mongoose.Types.ObjectId;
   caption: string;
-  image: string;
+  image?: string;           // optional ab — image ya video mein se ek hoga
+  video?: string;           // ✅ NEW
+  mediaType: PostMediaType; // ✅ NEW — 'image' | 'video'
   location?: string;
   userId: mongoose.Types.ObjectId;
   categoryId?: mongoose.Types.ObjectId;
@@ -24,24 +30,30 @@ export interface IPost extends Document {
 
 const CommentSchema = new Schema<IComment>(
   {
-    userId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
-    content: { type: String, required: true, trim: true, maxlength: 1000 },
-    createdAt: { type: Date, default: Date.now }, // ✅ broken link fix
+    userId:    { type: Schema.Types.ObjectId, ref: 'User', required: true },
+    content:   { type: String, required: true, trim: true, maxlength: 1000 },
+    createdAt: { type: Date, default: Date.now },
   },
   { _id: true }
 );
 
 const PostSchema = new Schema<IPost>(
   {
-    caption: { type: String, required: true, trim: true, maxlength: 2200 },
-    image: { type: String, required: true },
-    location: { type: String, maxlength: 200 },
-    userId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+    caption:   { type: String, required: true, trim: true, maxlength: 2200 },
+    image:     { type: String },                // ✅ required hata diya
+    video:     { type: String },                // ✅ NEW
+    mediaType: {                                // ✅ NEW
+      type: String,
+      enum: ['image', 'video'],
+      default: 'image',
+    },
+    location:   { type: String, maxlength: 200 },
+    userId:     { type: Schema.Types.ObjectId, ref: 'User',     required: true },
     categoryId: { type: Schema.Types.ObjectId, ref: 'Category' },
-    likes: [{ type: Schema.Types.ObjectId, ref: 'User' }],
+    likes:   [{ type: Schema.Types.ObjectId, ref: 'User' }],
     savedBy: [{ type: Schema.Types.ObjectId, ref: 'User' }],
-    comments: { type: [CommentSchema], default: [] },
-    isActive: { type: Boolean, default: true },
+    comments:  { type: [CommentSchema], default: [] },
+    isActive:  { type: Boolean, default: true },
   },
   {
     timestamps: true,
@@ -53,6 +65,17 @@ const PostSchema = new Schema<IPost>(
     },
   }
 );
+
+// ✅ Validation — image ya video mein se ek zaroori
+PostSchema.pre('save', function (next) {
+  if (!this.image && !this.video) {
+    return next(new Error('Post mein image ya video mein se ek zaroori hai.'));
+  }
+  // mediaType auto-set
+  if (this.video) this.mediaType = 'video';
+  else this.mediaType = 'image';
+  next();
+});
 
 PostSchema.index({ userId: 1 });
 PostSchema.index({ categoryId: 1 });

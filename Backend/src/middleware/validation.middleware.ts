@@ -78,10 +78,11 @@ export const updateOrderStatusSchema = z.object({
 export const createPostSchema = z.object({
   caption: z.string().min(1).max(500),
   image: z.string().optional(),
+  video: z.string().optional(),        // ✅ NEW
+  mediaType: z.enum(['image', 'video']).optional(),  // ✅ NEW
   location: z.string().optional(),
   categoryId: z.string().optional(),
 });
-
 export const addCommentSchema = z.object({
   content: z.string().min(1).max(1000),
 });

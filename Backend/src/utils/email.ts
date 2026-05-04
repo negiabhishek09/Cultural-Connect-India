@@ -1,20 +1,17 @@
-import nodemailer from 'nodemailer';
+import { Resend } from 'resend';
 import { logger } from '../config/logger';
 
-const transporter = nodemailer.createTransport({
-  host: "smtp.gmail.com",  // ✅ hardcode
-  port: 465,               // ✅ 587 se 465
-  secure: true,            // ✅ false se true
-  auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
-});
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 interface EmailOptions { to: string; subject: string; html: string; }
 
 export const sendEmail = async (options: EmailOptions): Promise<void> => {
   try {
-    await transporter.sendMail({
-      from: `"Cultural Connect India" <${process.env.EMAIL_FROM}>`,
-      ...options,
+    await resend.emails.send({
+      from: 'Cultural Connect India <onboarding@resend.dev>',
+      to: options.to,
+      subject: options.subject,
+      html: options.html,
     });
     logger.info(`Email sent → ${options.to}: ${options.subject}`);
   } catch (error) {
@@ -58,7 +55,7 @@ export const sendOTPEmail = async (email: string, otp: string) => {
         <div style="background: #fff7ed; border-radius: 8px; padding: 20px; text-align: center;">
           <p style="font-size: 36px; font-weight: bold; color: #ea580c; letter-spacing: 8px;">${otp}</p>
         </div>
-        <p style="color: #6b7280;">Yeh OTP 5 minutes mein expire ho jayega.</p>
+        <p style="color: #6b7280;">Your OTP code is valid for 5 minutes.</p>
       </div>
     `,
   });

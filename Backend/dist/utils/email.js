@@ -8,22 +8,19 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.sendBookingConfirmationEmail = exports.sendEventRegistrationEmail = exports.sendOrderConfirmationEmail = exports.sendOTPEmail = exports.sendWelcomeEmail = exports.sendEmail = void 0;
-const nodemailer_1 = __importDefault(require("nodemailer"));
+const resend_1 = require("resend");
 const logger_1 = require("../config/logger");
-const transporter = nodemailer_1.default.createTransport({
-    host: "smtp.gmail.com", // ✅ hardcode
-    port: 465, // ✅ 587 se 465
-    secure: true, // ✅ false se true
-    auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
-});
+const resend = new resend_1.Resend(process.env.RESEND_API_KEY);
 const sendEmail = (options) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        yield transporter.sendMail(Object.assign({ from: `"Cultural Connect India" <${process.env.EMAIL_FROM}>` }, options));
+        yield resend.emails.send({
+            from: 'Cultural Connect India <onboarding@resend.dev>',
+            to: options.to,
+            subject: options.subject,
+            html: options.html,
+        });
         logger_1.logger.info(`Email sent → ${options.to}: ${options.subject}`);
     }
     catch (error) {
@@ -66,7 +63,7 @@ const sendOTPEmail = (email, otp) => __awaiter(void 0, void 0, void 0, function*
         <div style="background: #fff7ed; border-radius: 8px; padding: 20px; text-align: center;">
           <p style="font-size: 36px; font-weight: bold; color: #ea580c; letter-spacing: 8px;">${otp}</p>
         </div>
-        <p style="color: #6b7280;">Yeh OTP 5 minutes mein expire ho jayega.</p>
+        <p style="color: #6b7280;">Your OTP code is valid for 5 minutes.</p>
       </div>
     `,
     });

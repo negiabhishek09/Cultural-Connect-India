@@ -8,19 +8,23 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.sendBookingConfirmationEmail = exports.sendEventRegistrationEmail = exports.sendOrderConfirmationEmail = exports.sendOTPEmail = exports.sendWelcomeEmail = exports.sendEmail = void 0;
-const resend_1 = require("resend");
+const nodemailer_1 = __importDefault(require("nodemailer"));
 const logger_1 = require("../config/logger");
-const resend = new resend_1.Resend(process.env.RESEND_API_KEY);
+const transporter = nodemailer_1.default.createTransport({
+    service: 'gmail',
+    auth: {
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASS,
+    },
+});
 const sendEmail = (options) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        yield resend.emails.send({
-            from: 'Cultural Connect India <onboarding@resend.dev>',
-            to: options.to,
-            subject: options.subject,
-            html: options.html,
-        });
+        yield transporter.sendMail(Object.assign({ from: `"Cultural Connect India" <${process.env.EMAIL_FROM}>` }, options));
         logger_1.logger.info(`Email sent → ${options.to}: ${options.subject}`);
     }
     catch (error) {

@@ -1,17 +1,21 @@
-import { Resend } from 'resend';
+import nodemailer from 'nodemailer';
 import { logger } from '../config/logger';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+const transporter = nodemailer.createTransport({
+  service: 'gmail',
+  auth: {
+    user: process.env.SMTP_USER,
+    pass: process.env.SMTP_PASS,
+  },
+});
 
 interface EmailOptions { to: string; subject: string; html: string; }
 
 export const sendEmail = async (options: EmailOptions): Promise<void> => {
   try {
-    await resend.emails.send({
-      from: 'Cultural Connect India <onboarding@resend.dev>',
-      to: options.to,
-      subject: options.subject,
-      html: options.html,
+    await transporter.sendMail({
+      from: `"Cultural Connect India" <${process.env.EMAIL_FROM}>`,
+      ...options,
     });
     logger.info(`Email sent → ${options.to}: ${options.subject}`);
   } catch (error) {

@@ -71,9 +71,12 @@ export interface Order {
   date: string;
 }
 
+const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
+
 const authFetch = (url: string, options: RequestInit = {}) => {
   const token = localStorage.getItem('token');
-  return fetch(url, {
+  const fullUrl = url.startsWith('http') ? url : `${BASE_URL}${url.replace('/api/v1', '')}`;
+  return fetch(fullUrl, {
     ...options,
     headers: {
       'Content-Type': 'application/json',

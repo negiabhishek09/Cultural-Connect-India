@@ -12,7 +12,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.getStats = exports.blockUser = exports.deleteUser = exports.getAllUsers = void 0;
 const User_model_1 = require("../models/User.model");
 const Product_model_1 = require("../models/Product.model");
-const event_model_1 = require("../models/event.model");
+const Event_model_1 = require("../models/Event.model");
 const ExploreItem_model_1 = require("../models/ExploreItem.model");
 const Post_model_1 = require("../models/Post.model");
 // ✅ Get all users
@@ -39,7 +39,7 @@ const getStats = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
         const [totalUsers, totalProducts, totalEvents, totalExploreItems, totalPosts, recentUsers,] = yield Promise.all([
             User_model_1.User.countDocuments(),
             Product_model_1.Product.countDocuments({ isActive: true }),
-            event_model_1.Event.countDocuments({ isActive: true }),
+            Event_model_1.Event.countDocuments({ isActive: true }),
             ExploreItem_model_1.ExploreItem.countDocuments({ isActive: true }),
             Post_model_1.Post.countDocuments(),
             User_model_1.User.find().sort({ createdAt: -1 }).limit(5).select('name email avatar createdAt role'),

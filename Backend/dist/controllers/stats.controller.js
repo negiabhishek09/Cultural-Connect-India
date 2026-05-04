@@ -11,7 +11,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getAdminStats = exports.getPublicStats = void 0;
 const User_model_1 = require("../models/User.model");
-const event_model_1 = require("../models/event.model");
+const Event_model_1 = require("../models/Event.model");
 const Business_model_1 = require("../models/Business.model");
 const Product_model_1 = require("../models/Product.model");
 const Post_model_1 = require("../models/Post.model");
@@ -24,7 +24,7 @@ const getPublicStats = (_req, res, next) => __awaiter(void 0, void 0, void 0, fu
     try {
         const [states, events, artisans, businesses, products, categories, posts] = yield Promise.all([
             State_model_1.State.countDocuments({ isActive: true }),
-            event_model_1.Event.countDocuments({ isActive: true }),
+            Event_model_1.Event.countDocuments({ isActive: true }),
             User_model_1.User.countDocuments({ role: { $in: ['ARTISAN', 'BUSINESS_OWNER'] }, isActive: true }),
             Business_model_1.Business.countDocuments({ isActive: true, isVerified: true }),
             Product_model_1.Product.countDocuments({ isActive: true }),

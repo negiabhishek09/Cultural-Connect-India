@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import slugify from 'slugify';
 import { State } from '../models/State.model';
-import { Event } from '../models/event.model';
+import { Event } from '../models/Event.model';
 import { Business } from '../models/Business.model';
 import { sendSuccess, sendPaginated, parsePagination } from '../utils/response.utils';
 import { AppError } from '../middleware/error.middleware';

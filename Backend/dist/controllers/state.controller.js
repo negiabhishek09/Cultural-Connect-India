@@ -15,7 +15,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.updateState = exports.createState = exports.getStateBySlug = exports.getStates = void 0;
 const slugify_1 = __importDefault(require("slugify"));
 const State_model_1 = require("../models/State.model");
-const event_model_1 = require("../models/event.model");
+const Event_model_1 = require("../models/Event.model");
 const Business_model_1 = require("../models/Business.model");
 const response_utils_1 = require("../utils/response.utils");
 const error_middleware_1 = require("../middleware/error.middleware");
@@ -53,7 +53,7 @@ const getStateBySlug = (req, res, next) => __awaiter(void 0, void 0, void 0, fun
             throw new error_middleware_1.AppError('State not found.', 404);
         // Fetch related events and businesses in parallel
         const [events, businesses] = yield Promise.all([
-            event_model_1.Event.find({ stateId: state._id, isActive: true })
+            Event_model_1.Event.find({ stateId: state._id, isActive: true })
                 .sort({ startDate: 1 })
                 .limit(5)
                 .populate('categoryId', 'name'),

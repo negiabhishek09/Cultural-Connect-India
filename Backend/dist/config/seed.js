@@ -14,7 +14,7 @@ const database_1 = require("./database");
 const User_model_1 = require("../models/User.model");
 const Category_model_1 = require("../models/Category.model");
 const State_model_1 = require("../models/State.model");
-const event_model_1 = require("../models/event.model");
+const Event_model_1 = require("../models/Event.model");
 const Business_model_1 = require("../models/Business.model");
 const Product_model_1 = require("../models/Product.model");
 const Post_model_1 = require("../models/Post.model");
@@ -27,7 +27,7 @@ function seed() {
             User_model_1.User.deleteMany({}),
             Category_model_1.Category.deleteMany({}),
             State_model_1.State.deleteMany({}),
-            event_model_1.Event.deleteMany({}),
+            Event_model_1.Event.deleteMany({}),
             Business_model_1.Business.deleteMany({}),
             Product_model_1.Product.deleteMany({}),
             Post_model_1.Post.deleteMany({}),
@@ -208,7 +208,7 @@ function seed() {
                 isFeatured: false,
             },
         ];
-        yield event_model_1.Event.insertMany(eventsData);
+        yield Event_model_1.Event.insertMany(eventsData);
         console.log(`✅ ${eventsData.length} events created`);
         // ─── Businesses (from LocalBusinesses.tsx) ────────────────────────────────
         const businessesData = [

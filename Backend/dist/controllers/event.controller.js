@@ -1,7 +1,7 @@
 "use strict";
 // import { Request, Response } from "express";
 // import slugify from "slugify";
-// import { Event } from "../models/event.model";
+// import { Event } from "../models/Event.model";
 // import { sendWelcomeEmail, sendEventRegistrationEmail } from "../utils/Email"; 
 // import { State } from "../models/State.model";       
 // import { Category } from "../models/Category.model";
@@ -21,7 +21,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.registerForEvent = exports.deleteEvent = exports.updateEvent = exports.createEvent = exports.getEventBySlug = exports.getEvents = void 0;
 const mongoose_1 = __importDefault(require("mongoose"));
 const slugify_1 = __importDefault(require("slugify"));
-const event_model_1 = require("../models/event.model");
+const Event_model_1 = require("../models/Event.model");
 const email_1 = require("../utils/email");
 // ✅ GET all events — stateId + featured + pagination
 const getEvents = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
@@ -40,7 +40,7 @@ const getEvents = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
         const pageNum = Number(page);
         const limitNum = Number(limit);
         const skip = (pageNum - 1) * limitNum;
-        const events = yield event_model_1.Event.find(filter)
+        const events = yield Event_model_1.Event.find(filter)
             .populate("stateId", "name")
             .populate("categoryId", "name")
             .sort({ startDate: 1 })
@@ -63,7 +63,7 @@ const getEvents = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
 exports.getEvents = getEvents;
 // ✅ GET event by slug
 const getEventBySlug = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const event = yield event_model_1.Event.findOneAndUpdate({ slug: req.params.slug, isActive: true }, { $inc: { viewCount: 1 } }, { new: true })
+    const event = yield Event_model_1.Event.findOneAndUpdate({ slug: req.params.slug, isActive: true }, { $inc: { viewCount: 1 } }, { new: true })
         .populate("stateId", "name")
         .populate("categoryId", "name");
     if (!event) {
@@ -82,7 +82,7 @@ exports.getEventBySlug = getEventBySlug;
 const createEvent = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { name, description, image, tag, startDate, endDate, location, venue, stateId, categoryId, isFeatured, } = req.body;
     const slug = (0, slugify_1.default)(name, { lower: true }) + "-" + Date.now();
-    const event = yield event_model_1.Event.create({
+    const event = yield Event_model_1.Event.create({
         name,
         slug,
         description,
@@ -108,7 +108,7 @@ const updateEvent = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
         req.body.slug =
             (0, slugify_1.default)(req.body.name, { lower: true }) + "-" + Date.now();
     }
-    const event = yield event_model_1.Event.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
+    const event = yield Event_model_1.Event.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
     if (!event) {
         return res.status(404).json({
             success: false,
@@ -123,7 +123,7 @@ const updateEvent = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
 exports.updateEvent = updateEvent;
 // ✅ DELETE event (soft delete)
 const deleteEvent = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const event = yield event_model_1.Event.findByIdAndUpdate(req.params.id, { isActive: false }, { new: true });
+    const event = yield Event_model_1.Event.findByIdAndUpdate(req.params.id, { isActive: false }, { new: true });
     if (!event) {
         return res.status(404).json({
             success: false,
@@ -146,7 +146,7 @@ const registerForEvent = (req, res) => __awaiter(void 0, void 0, void 0, functio
                 message: "eventId, name aur email required hain",
             });
         }
-        const event = yield event_model_1.Event.findById(eventId);
+        const event = yield Event_model_1.Event.findById(eventId);
         if (!event || !event.isActive) {
             return res.status(404).json({
                 success: false,

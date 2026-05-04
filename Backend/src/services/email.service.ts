@@ -1,25 +1,23 @@
-  import nodemailer from 'nodemailer';
+ import { Resend } from 'resend';
 import { logger } from '../config/logger';
 
-const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST,
-  port: Number(process.env.SMTP_PORT) || 465,
-  secure: process.env.SMTP_SECURE === 'true', // ✅ Fixed
-  auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
-});
-  interface EmailOptions { to: string; subject: string; html: string; }
+const resend = new Resend(process.env.RESEND_API_KEY);
 
-  export const sendEmail = async (options: EmailOptions): Promise<void> => {
-    try {
-      await transporter.sendMail({
-        from: `"Cultural Connect India" <${process.env.EMAIL_FROM}>`,
-        ...options,
-      });
-      logger.info(`Email sent → ${options.to}: ${options.subject}`);
-    } catch (error) {
-      logger.error('Email send failed:', error);
-    }
-  };
+interface EmailOptions { to: string; subject: string; html: string; }
+
+export const sendEmail = async (options: EmailOptions): Promise<void> => {
+  try {
+    await resend.emails.send({
+      from: 'Cultural Connect India <onboarding@resend.dev>',
+      to: options.to,
+      subject: options.subject,
+      html: options.html,
+    });
+    logger.info(`Email sent → ${options.to}: ${options.subject}`);
+  } catch (error) {
+    logger.error('Email send failed:', error);
+  }
+};
 
   // ✅ Welcome email
   export const sendWelcomeEmail = (name: string, email: string) =>

@@ -13,6 +13,15 @@
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
+    "@types/bcryptjs": "^2.4.6",
+    "@types/compression": "^1.8.1",
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/morgan": "^1.9.10",
+    "@types/multer": "^2.1.0",
+    "@types/node": "^20.0.0",
+    "@types/nodemailer": "^8.0.0",
     "axios": "^1.15.2",
     "bcryptjs": "^3.0.3",
     "cloudinary": "^1.41.3",
@@ -30,20 +39,11 @@
     "nodemailer": "^8.0.7",
     "pdfkit": "^0.18.0",
     "qrcode": "^1.5.4",
+    "resend": "^6.12.2",
     "slugify": "^1.6.9",
-    "winston": "^3.19.0",
-    "zod": "^4.3.6",
-    "@types/bcryptjs": "^2.4.6",
-    "@types/compression": "^1.8.1",
-    "@types/cors": "^2.8.19",
-    "@types/express": "^5.0.6",
-    "@types/jsonwebtoken": "^9.0.10",
-    "@types/morgan": "^1.9.10",
-    "@types/multer": "^2.1.0",
-    "@types/node": "^20.0.0",
-    "@types/nodemailer": "^8.0.0",
     "ts-node-dev": "^2.0.0",
-    "typescript": "^5.0.0"
-  },
-  "devDependencies": {}
+    "typescript": "^5.0.0",
+    "winston": "^3.19.0",
+    "zod": "^4.3.6"
+  }
 }

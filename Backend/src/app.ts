@@ -103,13 +103,13 @@ app.use(`${PREFIX}/states`, stateRoutes);
 app.use(`${PREFIX}/orders`, orderRoutes);
 app.use(`${PREFIX}/posts`, postRoutes);
 
-// ✅ Test routes — sirf development mein load honge
-if (process.env.NODE_ENV !== 'production') {
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  const testRoutes = require('./routes/test.routes').default;
-  app.use(`${PREFIX}`, testRoutes);
-  logger.warn('⚠️  Test routes are enabled (NODE_ENV is not production)');
-}
+// // ✅ Test routes — sirf development mein load honge
+// if (process.env.NODE_ENV !== 'production') {
+//   // eslint-disable-next-line @typescript-eslint/no-var-requires
+//   const testRoutes = require('./routes/test.routes').default;
+//   app.use(`${PREFIX}`, testRoutes);
+//   logger.warn('⚠️  Test routes are enabled (NODE_ENV is not production)');
+// }
 
 // ✅ Health check
 app.get('/health', (_req: Request, res: Response) => {

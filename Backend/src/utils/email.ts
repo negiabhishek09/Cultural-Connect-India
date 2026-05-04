@@ -1,4 +1,4 @@
-import nodemailer from 'nodemailer';
+import * as SibApiV3Sdk from '@getbrevo/brevo';
 import { logger } from '../config/logger';
 
 interface EmailOptions {
@@ -7,42 +7,31 @@ interface EmailOptions {
   html: string;
 }
 
-// Transporter ek baar banao
-const transporter = nodemailer.createTransport({
-  host: "smtp-relay.brevo.com",
-  port: 587,
-  secure: false,
-  auth: {
-    user: process.env.BREVO_USER,
-    pass: process.env.BREVO_PASS,
-  },
-});
-transporter.verify((error) => {
-  if (error) {
-    console.log('SMTP ERROR:', error);
-    console.log('SMTP ERROR CODE:', (error as any).code);
-    console.log('SMTP ERROR COMMAND:', (error as any).command);
-    console.log('BREVO_USER:', process.env.BREVO_USER);
-    console.log('BREVO_PASS exists:', !!process.env.BREVO_PASS);
-  } else {
-    logger.info('✅ Brevo SMTP ready');
-  }
-});
+const apiInstance = new SibApiV3Sdk.TransactionalEmailsApi();
+apiInstance.setApiKey(
+  SibApiV3Sdk.TransactionalEmailsApiApiKeys.apiKey,
+  process.env.BREVO_API_KEY!
+);
+
+logger.info('✅ Brevo API ready');
+
 export const sendEmail = async (options: EmailOptions): Promise<void> => {
   try {
-    await transporter.sendMail({
-      from: `"Cultural Connect India" <${process.env.BREVO_USER}>`,
-      to: options.to,
-      subject: options.subject,
-      html: options.html,
-    });
+    const sendSmtpEmail = new SibApiV3Sdk.SendSmtpEmail();
+    sendSmtpEmail.sender = {
+      email: 'aa2625001@smtp-brevo.com',
+      name: 'Cultural Connect India',
+    };
+    sendSmtpEmail.to = [{ email: options.to }];
+    sendSmtpEmail.subject = options.subject;
+    sendSmtpEmail.htmlContent = options.html;
 
+    await apiInstance.sendTransacEmail(sendSmtpEmail);
     logger.info(`Email sent → ${options.to}: ${options.subject}`);
   } catch (error) {
     logger.error('Email send failed:', error);
   }
 };
-
 
 // ✅ Welcome email
 export const sendWelcomeEmail = (name: string, email: string) =>
@@ -195,8 +184,8 @@ export const sendBookingConfirmationEmail = async (
 ) => {
   const bookingDate = booking.date
     ? new Date(booking.date).toLocaleDateString('en-IN', {
-      weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
-    })
+        weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
+      })
     : 'Date TBD';
 
   await sendEmail({

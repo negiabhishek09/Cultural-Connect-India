@@ -34,7 +34,7 @@ export function EventRegistrationModal({ isOpen, onClose, event }: EventRegistra
     setIsLoading(true);
 
     try {
-      await API.post('/events/register-event', {
+      await API.post('/events/register', {
         eventId: event._id,
         name: formData.name,
         email: formData.email,

@@ -102,8 +102,8 @@ export function AdminPanel() {
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (!file.type.startsWith('image/')) { toast.error('Sirf image select karo'); return; }
-    if (file.size > 10 * 1024 * 1024) { toast.error('Image 10MB se chhoti honi chahiye'); return; }
+    if (!file.type.startsWith('image/')) { toast.error('Select only the image.'); return; }
+    if (file.size > 10 * 1024 * 1024) { toast.error('Image must be smaller than 10 MB.'); return; }
     setImageFile(file);
     setImagePreview(URL.createObjectURL(file));
   };
@@ -161,7 +161,7 @@ export function AdminPanel() {
 
   // ✅ Delete — direct state update, no fetchAll
   const handleDelete = async (id: string, type: Tab) => {
-    if (!confirm('Delete karna chahte ho?')) return;
+    if (!confirm('Do you want to delete it??')) return;
     try {
       const url =
         type === 'events' ? `/events/${id}`
@@ -170,7 +170,7 @@ export function AdminPanel() {
         : `/explore/${id}`;
 
       await API.delete(url);
-      toast.success('Delete ho gaya!');
+      toast.success('It has been deleted.!');
 
       if (type === 'events') setEvents(prev => prev.filter(e => e._id !== id));
       else if (type === 'products') setProducts(prev => prev.filter(p => p._id !== id));
@@ -178,7 +178,7 @@ export function AdminPanel() {
       else setExploreItems(prev => prev.filter(e => e._id !== id));
 
     } catch (err: any) {
-      toast.error(err?.response?.data?.message || 'Delete fail ho gaya');
+      toast.error(err?.response?.data?.message || 'Deletion failed.');
     }
   };
 
@@ -198,7 +198,7 @@ export function AdminPanel() {
         setUploading(false);
       }
 
-      if (!imageUrl) { toast.error('Image zaroori hai'); return; }
+      if (!imageUrl) { toast.error('Image is required.'); return; }
 
       let payload: any;
       let url: string;
@@ -273,7 +273,7 @@ export function AdminPanel() {
           <motion.div className="flex items-center justify-between mb-8" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
             <div>
               <h1 className="text-4xl font-bold text-gray-900">Admin <span className="text-orange-600">Panel</span></h1>
-              <p className="text-gray-500 mt-1">Sab kuch manage karo</p>
+              <p className="text-gray-500 mt-1">Manage everything</p>
             </div>
             {activeTab !== 'dashboard' && (
               <motion.button

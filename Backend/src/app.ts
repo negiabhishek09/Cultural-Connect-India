@@ -18,27 +18,29 @@ import productRoutes from "./routes/product.routes";
 import exploreRoutes from "./routes/explore.routes";
 import bookingRoutes from "./routes/booking.routes";
 import stateRoutes from "./routes/state.routes";
-import orderRoutes from "./routes/order.routes"; 
+import orderRoutes from "./routes/order.routes";
 import cartRoutes from "./routes/cart.routes";
-import postRoutes from "./routes/post.routes";  
-
-
-
-
-
-
+import postRoutes from "./routes/post.routes";
 
 const app: Application = express();
 const PREFIX = process.env.API_PREFIX || '/api/v1';
 
-// ✅ CORS (sabse pehle)
+// ✅ CORS — Render + Local dono ke liye fix
 app.use(cors({
-  origin: ["http://localhost:5173",
+  origin: function (origin, callback) {
+    const allowedOrigins = [
+      "http://localhost:5173",
+      "https://localhost:5173",
+      process.env.FRONTEND_URL, // ✅ Render frontend URL env se aayegi
+    ].filter(Boolean) as string[];
 
-    "https://localhost:5173"
-  ], // ✅ yeh add karo
-
-
+    // Allow requests with no origin (mobile apps, curl, Postman)
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error(`CORS blocked for origin: ${origin}`));
+    }
+  },
   credentials: true,
 }));
 
@@ -57,13 +59,16 @@ app.use(morgan('combined', {
   stream: { write: (msg) => logger.http(msg.trim()) }
 }));
 
-// ✅ Rate limit
+// ✅ Rate limit — trustProxy zaroori hai Render ke liye
 app.use(rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 100,
+  max: 500, // 100 se 500 — production ke liye sahi
+  trustProxy: true, // ✅ Render proxy ke peeche hota hai
+  standardHeaders: true,
+  legacyHeaders: false,
 }));
 
-// ✅ Routes
+// ✅ Routes — sirf yahan (index.ts mein nahi)
 app.use(`${PREFIX}/auth`, authRoutes);
 app.use(`${PREFIX}/user`, userRoutes);
 app.use(`${PREFIX}/admin`, adminRoutes);
@@ -75,23 +80,24 @@ app.use(`${PREFIX}/products`, productRoutes);
 app.use(`${PREFIX}/explore`, exploreRoutes);
 app.use(`${PREFIX}/bookings`, bookingRoutes);
 app.use(`${PREFIX}/states`, stateRoutes);
-app.use(`${PREFIX}/orders`, orderRoutes); 
+app.use(`${PREFIX}/orders`, orderRoutes);
 app.use(`${PREFIX}/user/cart`, cartRoutes);
-app.use(`${PREFIX}/posts`, postRoutes);  
+app.use(`${PREFIX}/posts`, postRoutes);
 
-// ✅ Health
+// ✅ Health check — Render isko ping karta hai
 app.get('/health', (_req: Request, res: Response) => {
-  res.json({ status: 'OK' });
+  res.json({ status: 'OK', timestamp: new Date().toISOString() });
 });
 
-app.get(PREFIX, (_req, res) => {
+app.get(PREFIX, (_req: Request, res: Response) => {
   res.json({
     success: true,
-    message: 'API is running 🚀'
+    message: 'Cultural Connect India API is running 🚀'
   });
 });
 
-
+// ✅ Error handlers — sabse last mein
 app.use(notFound);
 app.use(errorHandler);
+
 export default app;

@@ -4,7 +4,7 @@ import { connectDB, disconnectDB } from './database';
 import { User } from '../models/User.model';
 import { Category } from '../models/Category.model';
 import { State } from '../models/State.model';
-import { Event } from '../models/Event.model';
+import { Event } from '../models/event.model';
 import { Business } from '../models/Business.model';
 import { Product } from '../models/Product.model';
 import { Post } from '../models/Post.model';

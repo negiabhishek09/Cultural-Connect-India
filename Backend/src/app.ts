@@ -6,6 +6,13 @@ import compression from 'compression';
 import morgan from 'morgan';
 import rateLimit from 'express-rate-limit';
 import { logger } from './config/logger';
+import './models/Category.model';
+import './models/State.model';
+import './models/User.model';
+import './models/Event.model';
+import './models/Product.model';
+import './models/ExploreItem.model';
+import './models/Post.model';
 
 import authRoutes from './routes/auth.routes';
 import userRoutes from './routes/user.routes';
@@ -20,6 +27,8 @@ import stateRoutes from './routes/state.routes';
 import orderRoutes from './routes/order.routes';
 import cartRoutes from './routes/cart.routes';
 import postRoutes from './routes/post.routes';
+
+
 
 import { errorHandler, notFound } from './middleware/error.middleware';
 

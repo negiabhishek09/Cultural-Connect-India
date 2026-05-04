@@ -24,4 +24,5 @@ router.post('/avatar',   upload.single('image'), handleUpload('avatars'));
 router.post('/post',     upload.single('image'), handleUpload('posts'));
 router.post('/product',  upload.single('image'), handleUpload('products'));
 router.post('/business', upload.single('image'), handleUpload('businesses'));
+
 export default router;

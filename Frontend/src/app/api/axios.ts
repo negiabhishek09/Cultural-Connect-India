@@ -1,7 +1,6 @@
 import axios from "axios";
 
-// ✅ FIX: Render pe VITE_API_URL env variable se URL aayega
-// Local mein automatically localhost use karega
+
 const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8000/api/v1";
 
 export const API = axios.create({

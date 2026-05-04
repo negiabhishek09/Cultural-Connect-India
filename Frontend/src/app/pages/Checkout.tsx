@@ -76,7 +76,7 @@ export function Checkout() {
       const token = localStorage.getItem('token');
       console.log('Token:', token);
 
-      const res = await fetch('/api/v1/orders', {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/orders`,  {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -160,9 +160,8 @@ export function Checkout() {
                 <div key={step.id} className="flex-1 flex items-center">
                   <div className="flex flex-col items-center flex-1">
                     <motion.div
-                      className={`w-12 h-12 rounded-full flex items-center justify-center ${
-                        currentStep >= step.id ? 'bg-orange-600 text-white' : 'bg-gray-200 text-gray-500'
-                      }`}
+                      className={`w-12 h-12 rounded-full flex items-center justify-center ${currentStep >= step.id ? 'bg-orange-600 text-white' : 'bg-gray-200 text-gray-500'
+                        }`}
                       animate={{ scale: currentStep === step.id ? 1.1 : 1 }}
                     >
                       <step.icon className="w-6 h-6" />
@@ -251,11 +250,10 @@ export function Checkout() {
                         <motion.div
                           key={address.id}
                           onClick={() => handleSelectAddress(address)} // ✅ fixed
-                          className={`p-4 border-2 rounded-2xl cursor-pointer transition-all ${
-                            selectedAddress?.id === address.id
+                          className={`p-4 border-2 rounded-2xl cursor-pointer transition-all ${selectedAddress?.id === address.id
                               ? 'border-orange-600 bg-orange-50'
                               : 'border-gray-200 hover:border-orange-300'
-                          }`}
+                            }`}
                           whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
                         >
                           <div className="flex items-start justify-between">

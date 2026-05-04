@@ -8,26 +8,33 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.sendBookingConfirmationEmail = exports.sendEventRegistrationEmail = exports.sendOrderConfirmationEmail = exports.sendOTPEmail = exports.sendWelcomeEmail = exports.sendEmail = void 0;
-const resend_1 = require("resend");
+const nodemailer_1 = __importDefault(require("nodemailer"));
 const logger_1 = require("../config/logger");
-const resend = new resend_1.Resend(process.env.RESEND_API_KEY);
+// Transporter ek baar banao
+const transporter = nodemailer_1.default.createTransport({
+    service: 'gmail',
+    auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS // Gmail App Password
+    }
+});
 const sendEmail = (options) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        yield Promise.race([
-            resend.emails.send({
-                from: 'Cultural Connect India <onboarding@resend.dev>',
-                to: options.to,
-                subject: options.subject,
-                html: options.html,
-            }),
-            new Promise((_, reject) => setTimeout(() => reject(new Error('Email timeout')), 5000))
-        ]);
+        yield transporter.sendMail({
+            from: `"Cultural Connect India" <${process.env.EMAIL_USER}>`,
+            to: options.to,
+            subject: options.subject,
+            html: options.html,
+        });
         logger_1.logger.info(`Email sent → ${options.to}: ${options.subject}`);
     }
     catch (error) {
-        logger_1.logger.error('Email failed (non-blocking):', error);
+        logger_1.logger.error('Email send failed:', error);
     }
 });
 exports.sendEmail = sendEmail;
@@ -144,17 +151,8 @@ const sendEventRegistrationEmail = (email, name, event) => __awaiter(void 0, voi
               </tr>
             </table>
           </div>
-          <div style="background: #f0fdf4; border: 2px dashed #22c55e; border-radius: 8px; padding: 20px; text-align: center; margin: 20px 0;">
-            <p style="color: #16a34a; font-weight: bold; font-size: 18px; margin: 0;">🎟️ Your Ticket</p>
-            <p style="color: #6b7280; margin: 8px 0 0;">Registered as: <strong>${name}</strong></p>
-            <p style="color: #6b7280; margin: 4px 0 0;">Email: <strong>${email}</strong></p>
-          </div>
         </div>
-        <div style="background: #f9fafb; padding: 20px; text-align: center; border-top: 1px solid #e5e7eb;">
-          <p style="color: #9ca3af; font-size: 12px; margin: 0;">Culture Connect India 🇮🇳</p>
-        </div>
-      </div>
-    `,
+      </div>`,
     });
 });
 exports.sendEventRegistrationEmail = sendEventRegistrationEmail;
@@ -198,17 +196,8 @@ const sendBookingConfirmationEmail = (email, name, booking) => __awaiter(void 0,
               </tr>` : ''}
             </table>
           </div>
-          <div style="background: #f0fdf4; border: 2px dashed #22c55e; border-radius: 8px; padding: 20px; text-align: center; margin: 20px 0;">
-            <p style="color: #16a34a; font-weight: bold; font-size: 18px; margin: 0;">🎟️ Booking Confirmed</p>
-            <p style="color: #6b7280; margin: 8px 0 0;">Name: <strong>${name}</strong></p>
-            <p style="color: #6b7280; margin: 4px 0 0;">Email: <strong>${email}</strong></p>
-          </div>
         </div>
-        <div style="background: #f9fafb; padding: 20px; text-align: center; border-top: 1px solid #e5e7eb;">
-          <p style="color: #9ca3af; font-size: 12px; margin: 0;">Culture Connect India 🇮🇳</p>
-        </div>
-      </div>
-    `,
+      </div>`,
     });
 });
 exports.sendBookingConfirmationEmail = sendBookingConfirmationEmail;

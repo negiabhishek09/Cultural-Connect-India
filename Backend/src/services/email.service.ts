@@ -1,18 +1,30 @@
- import { Resend } from 'resend';
+import nodemailer from 'nodemailer';
 import { logger } from '../config/logger';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+interface EmailOptions {
+  to: string;
+  subject: string;
+  html: string;
+}
 
-interface EmailOptions { to: string; subject: string; html: string; }
+// ✅ Transporter setup (Gmail example)
+const transporter = nodemailer.createTransport({
+  service: 'gmail',
+  auth: {
+    user: process.env.EMAIL_USER,       // your email
+    pass: process.env.EMAIL_PASS,       // app password (NOT normal password)
+  },
+});
 
 export const sendEmail = async (options: EmailOptions): Promise<void> => {
   try {
-    await resend.emails.send({
-      from: 'Cultural Connect India <onboarding@resend.dev>',
+    await transporter.sendMail({
+      from: `"Cultural Connect India" <${process.env.EMAIL_USER}>`,
       to: options.to,
       subject: options.subject,
       html: options.html,
     });
+
     logger.info(`Email sent → ${options.to}: ${options.subject}`);
   } catch (error) {
     logger.error('Email send failed:', error);

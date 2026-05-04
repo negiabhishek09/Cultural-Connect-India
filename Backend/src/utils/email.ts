@@ -1,7 +1,5 @@
-import { Resend } from 'resend';
+import nodemailer from 'nodemailer';
 import { logger } from '../config/logger';
-
-const resend = new Resend(process.env.RESEND_API_KEY);
 
 interface EmailOptions {
   to: string;
@@ -9,24 +7,29 @@ interface EmailOptions {
   html: string;
 }
 
+// Transporter ek baar banao
+const transporter = nodemailer.createTransport({
+  service: 'gmail',
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS  // Gmail App Password
+  }
+});
 export const sendEmail = async (options: EmailOptions): Promise<void> => {
   try {
-    await Promise.race([
-      resend.emails.send({
-        from: 'Cultural Connect India <onboarding@resend.dev>',
-        to: options.to,
-        subject: options.subject,
-        html: options.html,
-      }),
-      new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('Email timeout')), 5000)
-      )
-    ]);
+    await transporter.sendMail({
+      from: `"Cultural Connect India" <${process.env.EMAIL_USER}>`,
+      to: options.to,
+      subject: options.subject,
+      html: options.html,
+    });
+
     logger.info(`Email sent → ${options.to}: ${options.subject}`);
   } catch (error) {
-    logger.error('Email failed (non-blocking):', error);
+    logger.error('Email send failed:', error);
   }
 };
+
 
 // ✅ Welcome email
 export const sendWelcomeEmail = (name: string, email: string) =>
@@ -160,17 +163,8 @@ export const sendEventRegistrationEmail = async (
               </tr>
             </table>
           </div>
-          <div style="background: #f0fdf4; border: 2px dashed #22c55e; border-radius: 8px; padding: 20px; text-align: center; margin: 20px 0;">
-            <p style="color: #16a34a; font-weight: bold; font-size: 18px; margin: 0;">🎟️ Your Ticket</p>
-            <p style="color: #6b7280; margin: 8px 0 0;">Registered as: <strong>${name}</strong></p>
-            <p style="color: #6b7280; margin: 4px 0 0;">Email: <strong>${email}</strong></p>
-          </div>
         </div>
-        <div style="background: #f9fafb; padding: 20px; text-align: center; border-top: 1px solid #e5e7eb;">
-          <p style="color: #9ca3af; font-size: 12px; margin: 0;">Culture Connect India 🇮🇳</p>
-        </div>
-      </div>
-    `,
+      </div>`,
   });
 };
 
@@ -188,8 +182,8 @@ export const sendBookingConfirmationEmail = async (
 ) => {
   const bookingDate = booking.date
     ? new Date(booking.date).toLocaleDateString('en-IN', {
-        weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
-      })
+      weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
+    })
     : 'Date TBD';
 
   await sendEmail({
@@ -225,16 +219,7 @@ export const sendBookingConfirmationEmail = async (
               </tr>` : ''}
             </table>
           </div>
-          <div style="background: #f0fdf4; border: 2px dashed #22c55e; border-radius: 8px; padding: 20px; text-align: center; margin: 20px 0;">
-            <p style="color: #16a34a; font-weight: bold; font-size: 18px; margin: 0;">🎟️ Booking Confirmed</p>
-            <p style="color: #6b7280; margin: 8px 0 0;">Name: <strong>${name}</strong></p>
-            <p style="color: #6b7280; margin: 4px 0 0;">Email: <strong>${email}</strong></p>
-          </div>
         </div>
-        <div style="background: #f9fafb; padding: 20px; text-align: center; border-top: 1px solid #e5e7eb;">
-          <p style="color: #9ca3af; font-size: 12px; margin: 0;">Culture Connect India 🇮🇳</p>
-        </div>
-      </div>
-    `,
+      </div>`,
   });
 };

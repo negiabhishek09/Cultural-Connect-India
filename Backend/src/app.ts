@@ -39,11 +39,16 @@ app.use(cors({
       process.env.FRONTEND_URL,
     ].filter(Boolean) as string[];
 
-    
-    if (!origin || allowedOrigins.includes(origin) || origin.endsWith('.vercel.app')) {
+    if (
+      !origin ||
+      allowedOrigins.includes(origin) ||
+      /^https:\/\/cultural-connect-india(-[a-z0-9]+)*\.vercel\.app$/.test(origin)
+    ) {
       callback(null, true);
     } else {
-      callback(new Error(`CORS blocked for origin: ${origin}`));
+      const err = new Error(`CORS blocked for origin: ${origin}`);
+      logger.error(err);
+      callback(err);
     }
   },
   credentials: true,

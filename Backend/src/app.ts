@@ -29,7 +29,7 @@ app.set('trust proxy', 1);
 
 const PREFIX = process.env.API_PREFIX || '/api/v1';
 
-// ✅ CORS
+
 app.use(cors({
   origin: function (origin, callback) {
     const allowedOrigins = [
@@ -38,7 +38,9 @@ app.use(cors({
       "https://cultural-connect-india.vercel.app",
       process.env.FRONTEND_URL,
     ].filter(Boolean) as string[];
-    if (!origin || allowedOrigins.includes(origin)) {
+
+    
+    if (!origin || allowedOrigins.includes(origin) || origin.endsWith('.vercel.app')) {
       callback(null, true);
     } else {
       callback(new Error(`CORS blocked for origin: ${origin}`));
@@ -68,7 +70,7 @@ app.use(rateLimit({
   max: 500,
   standardHeaders: true,
   legacyHeaders: false,
-  validate: { xForwardedForHeader: false }, // ✅ Render warning fix
+  validate: { xForwardedForHeader: false },
 }));
 
 // ✅ Routes

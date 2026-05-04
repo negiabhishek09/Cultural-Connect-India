@@ -1,4 +1,4 @@
-// Post.model.ts — COMPLETE FILE (replace existing)
+
 
 import mongoose, { Document, Schema } from 'mongoose';
 
@@ -67,11 +67,10 @@ const PostSchema = new Schema<IPost>(
 );
 
 // ✅ Validation — image ya video mein se ek zaroori
-PostSchema.pre('save', function (next) {
+PostSchema.pre('save', function (this: IPost, next: (err?: Error) => void) {
   if (!this.image && !this.video) {
     return next(new Error('Post mein image ya video mein se ek zaroori hai.'));
   }
-  // mediaType auto-set
   if (this.video) this.mediaType = 'video';
   else this.mediaType = 'image';
   next();

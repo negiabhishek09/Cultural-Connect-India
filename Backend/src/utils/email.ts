@@ -17,6 +17,13 @@ const transporter = nodemailer.createTransport({
     pass: process.env.BREVO_PASS,
   },
 });
+transporter.verify((error) => {
+  if (error) {
+    logger.error('❌ Brevo SMTP failed:', error.message);
+  } else {
+    logger.info('✅ Brevo SMTP ready');
+  }
+});
 export const sendEmail = async (options: EmailOptions): Promise<void> => {
   try {
     await transporter.sendMail({

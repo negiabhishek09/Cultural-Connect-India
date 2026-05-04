@@ -19,13 +19,14 @@ const database_1 = require("./config/database");
 const logger_1 = require("./config/logger");
 app_1.default.use('/uploads', express_1.default.static('uploads'));
 const PORT = process.env.PORT || 8000;
+const BASE_URL = process.env.BASE_URL || `http://localhost:${PORT}/api/v1`;
 function bootstrap() {
     return __awaiter(this, void 0, void 0, function* () {
         try {
             yield (0, database_1.connectDB)();
             app_1.default.listen(PORT, () => {
                 logger_1.logger.info(`✅ Server running on port ${PORT}`);
-                logger_1.logger.info(`🚀 Base URL: http://localhost:${PORT}/api/v1`);
+                logger_1.logger.info(`🚀 Base URL: ${BASE_URL}`);
             });
         }
         catch (error) {

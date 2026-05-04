@@ -18,7 +18,8 @@ const User_model_1 = require("../models/User.model");
 const jwt_utils_1 = require("../utils/jwt.utils");
 const response_utils_1 = require("../utils/response.utils");
 const error_middleware_1 = require("../middleware/error.middleware");
-const email_1 = require("../utils/email");
+// import { sendWelcomeEmail, sendOTPEmail } from '../utils/email';
+const email_service_1 = require("../services/email.service");
 // POST /api/v1/auth/register
 const register = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     try {
@@ -45,8 +46,8 @@ const register = (req, res, next) => __awaiter(void 0, void 0, void 0, function*
             refreshToken: hashedRefreshToken,
         });
         // ✅ FIX: Arguments sahi order mein — sendWelcomeEmail(name, email)
-        yield (0, email_1.sendWelcomeEmail)(user.name, user.email);
-        yield (0, email_1.sendOTPEmail)(user.email, otp);
+        yield (0, email_service_1.sendWelcomeEmail)(user.name, user.email);
+        yield (0, email_service_1.sendOTPEmail)(user.email, otp);
         const safeUser = yield User_model_1.User.findById(user._id);
         (0, response_utils_1.sendSuccess)(res, { user: safeUser, accessToken, refreshToken }, 'Account created successfully.', 201);
     }

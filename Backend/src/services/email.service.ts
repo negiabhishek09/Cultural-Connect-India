@@ -9,17 +9,19 @@ interface EmailOptions {
 
 // ✅ Transporter setup (Gmail example)
 const transporter = nodemailer.createTransport({
-  service: 'gmail',
+  host: "smtp-relay.brevo.com",
+  port: 587,
+  secure: false,
   auth: {
-    user: process.env.EMAIL_USER,       // your email
-    pass: process.env.EMAIL_PASS,       // app password (NOT normal password)
+    user: process.env.BREVO_USER,
+    pass: process.env.BREVO_PASS,
   },
 });
 
 export const sendEmail = async (options: EmailOptions): Promise<void> => {
   try {
     await transporter.sendMail({
-      from: `"Cultural Connect India" <${process.env.EMAIL_USER}>`,
+      from: `"Cultural Connect India" <${process.env.BREVO_USER}>`,
       to: options.to,
       subject: options.subject,
       html: options.html,

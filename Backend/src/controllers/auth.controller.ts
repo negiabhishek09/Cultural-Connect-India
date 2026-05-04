@@ -4,7 +4,8 @@ import { User } from '../models/User.model';
 import { generateAccessToken, generateRefreshToken, verifyRefreshToken } from '../utils/jwt.utils';
 import { sendSuccess, sendError } from '../utils/response.utils';
 import { AppError } from '../middleware/error.middleware';
-import { sendWelcomeEmail, sendOTPEmail } from '../utils/email';
+// import { sendWelcomeEmail, sendOTPEmail } from '../utils/email';
+import { sendWelcomeEmail, sendOTPEmail } from '../services/email.service';
 
 // POST /api/v1/auth/register
 export const register = async (req: Request, res: Response, next: NextFunction): Promise<void> => {

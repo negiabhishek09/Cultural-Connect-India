@@ -17,16 +17,18 @@ const nodemailer_1 = __importDefault(require("nodemailer"));
 const logger_1 = require("../config/logger");
 // ✅ Transporter setup (Gmail example)
 const transporter = nodemailer_1.default.createTransport({
-    service: 'gmail',
+    host: "smtp-relay.brevo.com",
+    port: 587,
+    secure: false,
     auth: {
-        user: process.env.EMAIL_USER, // your email
-        pass: process.env.EMAIL_PASS, // app password (NOT normal password)
+        user: process.env.BREVO_USER,
+        pass: process.env.BREVO_PASS,
     },
 });
 const sendEmail = (options) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         yield transporter.sendMail({
-            from: `"Cultural Connect India" <${process.env.EMAIL_USER}>`,
+            from: `"Cultural Connect India" <${process.env.BREVO_USER}>`,
             to: options.to,
             subject: options.subject,
             html: options.html,

@@ -14,7 +14,7 @@ export const sendEmail = async (options: EmailOptions): Promise<void> => {
     await axios.post(
       'https://api.brevo.com/v3/smtp/email',
       {
-        sender: { email: 'aa2625001@smtp-brevo.com', name: 'Cultural Connect India' },
+        sender: { email: 'ajaynegi910@gmail.com', name: 'Cultural Connect India' },
         to: [{ email: options.to }],
         subject: options.subject,
         htmlContent: options.html,

@@ -1,4 +1,4 @@
-import * as SibApiV3Sdk from '@getbrevo/brevo';
+import axios from 'axios';
 import { logger } from '../config/logger';
 
 interface EmailOptions {
@@ -7,26 +7,25 @@ interface EmailOptions {
   html: string;
 }
 
-const apiInstance = new SibApiV3Sdk.TransactionalEmailsApi();
-apiInstance.setApiKey(
-  SibApiV3Sdk.TransactionalEmailsApiApiKeys.apiKey,
-  process.env.BREVO_API_KEY!
-);
-
 logger.info('✅ Brevo API ready');
 
 export const sendEmail = async (options: EmailOptions): Promise<void> => {
   try {
-    const sendSmtpEmail = new SibApiV3Sdk.SendSmtpEmail();
-    sendSmtpEmail.sender = {
-      email: 'aa2625001@smtp-brevo.com',
-      name: 'Cultural Connect India',
-    };
-    sendSmtpEmail.to = [{ email: options.to }];
-    sendSmtpEmail.subject = options.subject;
-    sendSmtpEmail.htmlContent = options.html;
-
-    await apiInstance.sendTransacEmail(sendSmtpEmail);
+    await axios.post(
+      'https://api.brevo.com/v3/smtp/email',
+      {
+        sender: { email: 'aa2625001@smtp-brevo.com', name: 'Cultural Connect India' },
+        to: [{ email: options.to }],
+        subject: options.subject,
+        htmlContent: options.html,
+      },
+      {
+        headers: {
+          'api-key': process.env.BREVO_API_KEY!,
+          'Content-Type': 'application/json',
+        },
+      }
+    );
     logger.info(`Email sent → ${options.to}: ${options.subject}`);
   } catch (error) {
     logger.error('Email send failed:', error);

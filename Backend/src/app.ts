@@ -23,20 +23,21 @@ import cartRoutes from "./routes/cart.routes";
 import postRoutes from "./routes/post.routes";
 
 const app: Application = express();
+
+// ✅ Trust proxy — Render ke liye zaroori
+app.set('trust proxy', 1);
+
 const PREFIX = process.env.API_PREFIX || '/api/v1';
 
-// ✅ CORS — Render + Local dono ke liye fix
+// ✅ CORS
 app.use(cors({
   origin: function (origin, callback) {
     const allowedOrigins = [
       "http://localhost:5173",
       "https://localhost:5173",
       "https://cultural-connect-india.vercel.app",
-      
-      process.env.FRONTEND_URL, // ✅ Render frontend URL env se aayegi
+      process.env.FRONTEND_URL,
     ].filter(Boolean) as string[];
-
-    // Allow requests with no origin (mobile apps, curl, Postman)
     if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
@@ -61,16 +62,16 @@ app.use(morgan('combined', {
   stream: { write: (msg) => logger.http(msg.trim()) }
 }));
 
-// ✅ Rate limit — trustProxy zaroori hai Render ke liye
+// ✅ Rate limit
 app.use(rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 500, // 100 se 500 — production ke liye sahi
-  
+  max: 500,
   standardHeaders: true,
   legacyHeaders: false,
+  validate: { xForwardedForHeader: false }, // ✅ Render warning fix
 }));
 
-// ✅ Routes — sirf yahan (index.ts mein nahi)
+// ✅ Routes
 app.use(`${PREFIX}/auth`, authRoutes);
 app.use(`${PREFIX}/user`, userRoutes);
 app.use(`${PREFIX}/admin`, adminRoutes);
@@ -86,7 +87,7 @@ app.use(`${PREFIX}/orders`, orderRoutes);
 app.use(`${PREFIX}/user/cart`, cartRoutes);
 app.use(`${PREFIX}/posts`, postRoutes);
 
-// ✅ Health check — Render isko ping karta hai
+// ✅ Health check
 app.get('/health', (_req: Request, res: Response) => {
   res.json({ status: 'OK', timestamp: new Date().toISOString() });
 });
@@ -98,7 +99,7 @@ app.get(PREFIX, (_req: Request, res: Response) => {
   });
 });
 
-// ✅ Error handlers — sabse last mein
+// ✅ Error handlers
 app.use(notFound);
 app.use(errorHandler);
 

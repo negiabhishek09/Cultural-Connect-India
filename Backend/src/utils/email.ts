@@ -2,9 +2,9 @@ import nodemailer from 'nodemailer';
 import { logger } from '../config/logger';
 
 const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST,
-  port: Number(process.env.SMTP_PORT) || 587,
-  secure: false,
+  host: "smtp.gmail.com",  // ✅ hardcode
+  port: 465,               // ✅ 587 se 465
+  secure: true,            // ✅ false se true
   auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
 });
 

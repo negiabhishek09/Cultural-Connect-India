@@ -75,7 +75,6 @@ export const updateOrderStatusSchema = z.object({
   status: z.enum(['PENDING', 'CONFIRMED', 'SHIPPED', 'DELIVERED', 'CANCELLED']),
 });
 
-// ✅ FIX: Ye dono schemas missing the — isliye comment/post kaam nahi kar raha tha
 export const createPostSchema = z.object({
   caption: z.string().min(1).max(500),
   image: z.string().optional(),
@@ -85,4 +84,29 @@ export const createPostSchema = z.object({
 
 export const addCommentSchema = z.object({
   content: z.string().min(1).max(1000),
+});
+
+// ✅ FIX: Ye 3 schemas missing the — ab add kar diye
+export const createBusinessSchema = z.object({
+  name: z.string().min(2).max(100),
+  description: z.string().min(10).max(1000).optional(),
+  category: z.string().optional(),
+  location: z.string().optional(),
+  phone: z.string().optional(),
+  email: z.string().email().optional(),
+  website: z.string().url().optional(),
+});
+
+export const addReviewSchema = z.object({
+  rating: z.number().min(1).max(5),
+  comment: z.string().min(1).max(500).optional(),
+});
+
+export const createStateSchema = z.object({
+  name: z.string().min(2).max(100),
+  description: z.string().optional(),
+  capital: z.string().optional(),
+  region: z.string().optional(),
+  image: z.string().optional(),
+  famousFor: z.array(z.string()).optional(),
 });

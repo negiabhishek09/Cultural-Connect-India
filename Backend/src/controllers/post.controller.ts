@@ -25,7 +25,8 @@ export const getPosts = async (req: Request, res: Response, next: NextFunction):
 
     const userId = req.user?.id;
     const enriched = posts.map((post) => {
-      const obj = post.toJSON() as Record<string, unknown>;
+      // ✅ Fix: unknown pehle, phir Record<string, unknown>
+      const obj = post.toJSON() as unknown as Record<string, unknown>;
       obj.likeCount = (post.likes as mongoose.Types.ObjectId[]).length;
       obj.commentCount = post.comments.length;
       obj.isLiked = userId
@@ -45,7 +46,7 @@ export const getPosts = async (req: Request, res: Response, next: NextFunction):
   }
 };
 
-// GET /api/v1/posts/liked — ✅ naya endpoint
+// GET /api/v1/posts/liked
 export const getLikedPosts = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const userId = new mongoose.Types.ObjectId(req.user!.id);
@@ -62,7 +63,8 @@ export const getLikedPosts = async (req: Request, res: Response, next: NextFunct
     ]);
 
     const enriched = posts.map((post) => {
-      const obj = post.toJSON() as Record<string, unknown>;
+      // ✅ Fix: unknown pehle, phir Record<string, unknown>
+      const obj = post.toJSON() as unknown as Record<string, unknown>;
       obj.likeCount = (post.likes as mongoose.Types.ObjectId[]).length;
       obj.commentCount = post.comments.length;
       obj.isLiked = true;

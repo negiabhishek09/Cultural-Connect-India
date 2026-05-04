@@ -63,7 +63,7 @@ app.use(morgan('combined', {
 app.use(rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 500, // 100 se 500 — production ke liye sahi
-  trustProxy: true, // ✅ Render proxy ke peeche hota hai
+  
   standardHeaders: true,
   legacyHeaders: false,
 }));

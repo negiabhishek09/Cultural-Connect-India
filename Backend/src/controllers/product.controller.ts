@@ -88,7 +88,6 @@ export const createProduct = async (req: Request, res: Response, next: NextFunct
       }
     }
 
-    // ✅ Price sanitize
     if (req.body.price !== undefined) {
       req.body.price = parseFloat(String(req.body.price).replace(/[^\d.]/g, ''));
     }
@@ -115,14 +114,12 @@ export const updateProduct = async (req: Request, res: Response, next: NextFunct
     delete req.body.slug;
     delete req.body.businessId;
 
-    // ✅ Price sanitize
     if (req.body.price !== undefined) {
       req.body.price = parseFloat(String(req.body.price).replace(/[^\d.]/g, ''));
     }
 
     const updated = await Product.findByIdAndUpdate(req.params.id, req.body, {
-      returnDocument: 'after', // ✅ deprecation fix
-      // runValidators: true,
+      returnDocument: 'after',
     });
 
     sendSuccess(res, updated, 'Product updated.');
@@ -140,9 +137,13 @@ export const toggleWishlist = async (req: Request, res: Response, next: NextFunc
     if (!product) throw new AppError('Product not found.', 404);
 
     const user = await User.findById(req.user!.id).select('+wishlist');
-    const wishlist: string[] = (user as Record<string, unknown>)?.wishlist as string[] ?? [];
+    // ✅ Fix: any use karke type error avoid kiya
+    const wishlist: string[] = Array.isArray((user as any)?.wishlist)
+      ? (user as any).wishlist
+      : [];
 
-    const isWishlisted = wishlist.includes(productId);
+    // ✅ Fix: String() se ensure kiya ki productId string hai
+    const isWishlisted = wishlist.includes(String(productId));
 
     if (isWishlisted) {
       await User.findByIdAndUpdate(req.user!.id, { $pull: { wishlist: productId } });

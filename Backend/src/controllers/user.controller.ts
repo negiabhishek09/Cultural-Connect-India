@@ -5,8 +5,6 @@ import { Product } from '../models/Product.model';
 import { sendSuccess, sendPaginated, parsePagination } from '../utils/response.utils';
 import { AppError } from '../middleware/error.middleware';
 
-
-
 // GET /api/v1/users/profile
 export const getProfile = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
@@ -15,7 +13,6 @@ export const getProfile = async (req: Request, res: Response, next: NextFunction
 
     const [postCount, orderCount] = await Promise.all([
       Post.countDocuments({ userId: user._id, isActive: true }),
-      // lazy import to avoid circular — Order is in orders controller
       import('../models/Order.model').then(({ Order }) =>
         Order.countDocuments({ userId: user._id })
       ),
@@ -52,9 +49,9 @@ export const changePassword = async (req: Request, res: Response, next: NextFunc
     if (!user) throw new AppError('User not found.', 404);
 
     const isMatch = await user.comparePassword(currentPassword);
-    if (user) throw new AppError('Current password is incorrect.', 400);
+    if (!isMatch) throw new AppError('Current password is incorrect.', 400); // ✅ Fix: user -> !isMatch
 
-    user.password = newPassword; // pre-save hook re-hashes automatically
+    user.password = newPassword;
     await user.save();
 
     sendSuccess(res, null, 'Password changed successfully.');
@@ -69,7 +66,10 @@ export const getWishlist = async (req: Request, res: Response, next: NextFunctio
     const { page, limit, skip } = parsePagination(req.query as Record<string, unknown>);
 
     const user = await User.findById(req.user!.id).select('wishlist');
-    const wishlistIds: string[] = (user as Record<string, unknown>)?.wishlist as string[] ?? [];
+    // ✅ Fix: any use karke type error avoid kiya
+    const wishlistIds: string[] = Array.isArray((user as any)?.wishlist)
+      ? (user as any).wishlist
+      : [];
 
     const total = wishlistIds.length;
     const pageIds = wishlistIds.slice(skip, skip + limit);
@@ -117,10 +117,10 @@ export const getAllUsers = async (req: Request, res: Response, next: NextFunctio
     const { role, search } = req.query;
 
     const filter: Record<string, unknown> = {};
-    if (role)   filter.role = role;
+    if (role) filter.role = role;
     if (search) {
       filter.$or = [
-        { name:  { $regex: search, $options: 'i' } },
+        { name: { $regex: search, $options: 'i' } },
         { email: { $regex: search, $options: 'i' } },
       ];
     }

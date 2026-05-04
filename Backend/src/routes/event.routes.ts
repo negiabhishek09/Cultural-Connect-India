@@ -1,4 +1,7 @@
-import { Router } from "express";
+// event.routes.ts — COMPLETE FILE (replace existing)
+// Apne existing route file mein jo bhi tha usse replace karo
+
+import { Router } from 'express';
 import {
   getEvents,
   getEventBySlug,
@@ -6,25 +9,25 @@ import {
   updateEvent,
   deleteEvent,
   registerForEvent,
-} from "../controllers/event.controller";
-import { protect, restrictTo } from "../middleware/auth.middleware";
-
-// ✅ Models yahan import karo taaki mongoose register kar le
-import "../models/State.model";
-import "../models/Category.model";
+  getMyRegistrations,
+  cancelRegistration,
+} from '../controllers/event.controller';
+import { protect, restrictTo } from '../middleware/auth.middleware';
 
 const router = Router();
 
-// PUBLIC
-router.get("/", getEvents);
-router.get("/:slug", getEventBySlug);
+// ── Public ────────────────────────────────────────────────
+router.get('/',          getEvents);
+router.get('/:slug',     getEventBySlug);
+router.post('/register', registerForEvent);   // public — naam + email se register
 
-// ADMIN
-router.post("/", protect, restrictTo("ADMIN"), createEvent);
-router.patch("/:id", protect, restrictTo("ADMIN"), updateEvent);
-router.delete("/:id", protect, restrictTo("ADMIN"), deleteEvent);
+// ── Logged-in user ────────────────────────────────────────
+router.get('/my-registrations',            protect, getMyRegistrations);
+router.delete('/:id/cancel-registration',  protect, cancelRegistration);
 
-// USER
-router.post("/register-event", registerForEvent);
+// ── Admin only ────────────────────────────────────────────
+router.post('/',        protect, restrictTo('ADMIN'), createEvent);
+router.put('/:id',      protect, restrictTo('ADMIN'), updateEvent);
+router.delete('/:id',   protect, restrictTo('ADMIN'), deleteEvent);
 
 export default router;

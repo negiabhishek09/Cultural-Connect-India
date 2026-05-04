@@ -1,11 +1,13 @@
 import { Request, Response, NextFunction } from 'express';
 import bcrypt from 'bcryptjs';
+import { OAuth2Client } from 'google-auth-library';
 import { User } from '../models/User.model';
 import { generateAccessToken, generateRefreshToken, verifyRefreshToken } from '../utils/jwt.utils';
 import { sendSuccess, sendError } from '../utils/response.utils';
 import { AppError } from '../middleware/error.middleware';
-// import { sendWelcomeEmail, sendOTPEmail } from '../utils/email';
 import { sendWelcomeEmail, sendOTPEmail } from '../services/email.service';
+
+const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 // POST /api/v1/auth/register
 export const register = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
@@ -38,7 +40,6 @@ export const register = async (req: Request, res: Response, next: NextFunction):
       refreshToken: hashedRefreshToken,
     });
 
-    // ✅ FIX: Arguments sahi order mein — sendWelcomeEmail(name, email)
     await sendWelcomeEmail(user.name, user.email);
     await sendOTPEmail(user.email, otp);
 
@@ -157,6 +158,271 @@ export const updateProfile = async (req: Request, res: Response, next: NextFunct
     if (!user) throw new AppError('User not found.', 404);
 
     sendSuccess(res, { user }, 'Profile updated successfully.');
+  } catch (error) {
+    next(error);
+  }
+};
+
+// POST /api/v1/auth/google
+export const googleAuth = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const { credential } = req.body;
+
+    const ticket = await googleClient.verifyIdToken({
+      idToken: credential,
+      audience: process.env.GOOGLE_CLIENT_ID,
+    });
+
+    const payload = ticket.getPayload();
+    if (!payload) { sendError(res, 'Invalid Google token.', 401); return; }
+
+    const { email, name, picture } = payload;
+
+    let user = await User.findOne({ email: email!.toLowerCase() });
+
+    if (!user) {
+      user = await User.create({
+        name,
+        email: email!.toLowerCase(),
+        password: Math.random().toString(36),
+        avatar: picture,
+        isVerified: true,
+      });
+      await sendWelcomeEmail(user.name, user.email);
+    }
+
+    const tokenPayload = { id: user._id.toString(), email: user.email, role: user.role };
+    const accessToken = generateAccessToken(tokenPayload);
+    const refreshToken = generateRefreshToken(tokenPayload);
+
+    await User.findByIdAndUpdate(user._id, {
+      refreshToken: await bcrypt.hash(refreshToken, 8),
+    });
+
+    const safeUser = await User.findById(user._id);
+    sendSuccess(res, { user: safeUser, accessToken, refreshToken }, 'Google login successful.');
+  } catch (error) {
+    next(error);
+  }
+};
+
+// POST /api/v1/auth/forgot-password
+export const forgotPassword = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const { email } = req.body;
+
+    const user = await User.findOne({ email: email.toLowerCase() });
+    if (!user) {
+      // Security: same response even if email doesn't exist (prevents user enumeration)
+      sendSuccess(res, null, 'If this email exists, an OTP has been sent.');
+      return;
+    }
+
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+
+    await User.findByIdAndUpdate(user._id, {
+      otp,
+      otpExpires: new Date(Date.now() + 10 * 60 * 1000), // 10 min (was 5 min)
+    });
+
+    await sendOTPEmail(user.email, otp);
+
+    sendSuccess(res, null, 'OTP sent to your email.');
+  } catch (error) {
+    next(error);
+  }
+};
+
+// POST /api/v1/auth/verify-otp
+// Validates OTP — returns otpVerified flag so frontend can proceed to step 3
+export const verifyOtp = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const { email, otp } = req.body;
+
+    if (!email || !otp) {
+      sendError(res, 'Email and OTP are required.', 400);
+      return;
+    }
+
+    const user = await User.findOne({ email: email.toLowerCase() }).select('+otp +otpExpires');
+
+    if (!user) {
+      sendError(res, 'No account found with this email.', 404);
+      return;
+    }
+
+    if (!user.otp || !user.otpExpires) {
+      sendError(res, 'OTP not requested. Please request a new one.', 400);
+      return;
+    }
+
+    if (user.otp !== otp) {
+      sendError(res, 'Invalid OTP.', 400);
+      return;
+    }
+
+    if (user.otpExpires < new Date()) {
+      sendError(res, 'OTP has expired. Please request a new one.', 400);
+      return;
+    }
+
+    // OTP sahi hai — mark verified in DB so reset-password can trust this session
+    // We reuse otpExpires: extend by 15 min for password reset window
+    await User.findByIdAndUpdate(user._id, {
+      otpExpires: new Date(Date.now() + 15 * 60 * 1000),
+    });
+
+    sendSuccess(res, { otpVerified: true }, 'OTP verified successfully.');
+  } catch (error) {
+    next(error);
+  }
+};
+
+// POST /api/v1/auth/reset-password
+// Called after verify-otp — checks otp + expiry again as a second guard
+export const resetPassword = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const { email, otp, newPassword } = req.body;
+
+    if (!email || !otp || !newPassword) {
+      sendError(res, 'Email, OTP, and new password are required.', 400);
+      return;
+    }
+
+    if (newPassword.length < 8) {
+      sendError(res, 'Password must be at least 8 characters.', 400);
+      return;
+    }
+
+    const user = await User.findOne({ email: email.toLowerCase() }).select('+otp +otpExpires +password');
+
+    if (!user) {
+      sendError(res, 'No account found with this email.', 404);
+      return;
+    }
+
+    if (!user.otp || !user.otpExpires) {
+      sendError(res, 'OTP session expired. Please start over.', 400);
+      return;
+    }
+
+    // Re-validate OTP as a second guard (prevents direct API abuse skipping verify step)
+    if (user.otp !== otp) {
+      sendError(res, 'Invalid OTP.', 400);
+      return;
+    }
+
+    if (user.otpExpires < new Date()) {
+      sendError(res, 'Session expired. Please request a new OTP.', 400);
+      return;
+    }
+
+    // Update password (pre-save hook in User model handles hashing)
+    user.password = newPassword;
+    await user.save();
+
+    // Clear OTP fields
+    await User.findByIdAndUpdate(user._id, {
+      $unset: { otp: 1, otpExpires: 1 },
+    });
+
+    sendSuccess(res, null, 'Password reset successfully.');
+  } catch (error) {
+    next(error);
+  }
+};
+// ─────────────────────────────────────────────────────────────
+// ADD THIS to auth.controller.ts
+// POST /api/v1/auth/verify-email
+// Called after register — user submits OTP sent to their email
+// ─────────────────────────────────────────────────────────────
+
+export const verifyEmail = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const { email, otp } = req.body;
+
+    if (!email || !otp) {
+      sendError(res, 'Email and OTP are required.', 400);
+      return;
+    }
+
+    const user = await User.findOne({ email: email.toLowerCase() }).select('+otp +otpExpires');
+
+    if (!user) {
+      sendError(res, 'No account found with this email.', 404);
+      return;
+    }
+
+    // Already verified — idempotent response
+    if (user.isVerified) {
+      sendSuccess(res, null, 'Email is already verified.');
+      return;
+    }
+
+    if (!user.otp || !user.otpExpires) {
+      sendError(res, 'No OTP found. Please request a new one.', 400);
+      return;
+    }
+
+    if (user.otp !== otp) {
+      sendError(res, 'Invalid OTP.', 400);
+      return;
+    }
+
+    if (user.otpExpires < new Date()) {
+      sendError(res, 'OTP has expired. Please request a new one.', 400);
+      return;
+    }
+
+    // Mark verified + clear OTP fields
+    await User.findByIdAndUpdate(user._id, {
+      isVerified: true,
+      $unset: { otp: 1, otpExpires: 1 },
+    });
+
+    sendSuccess(res, null, 'Email verified successfully.');
+  } catch (error) {
+    next(error);
+  }
+};
+
+// ─────────────────────────────────────────────────────────────
+// POST /api/v1/auth/resend-verification-otp
+// User ne OTP miss kiya ya expire ho gaya — resend karo
+// ─────────────────────────────────────────────────────────────
+
+export const resendVerificationOtp = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      sendError(res, 'Email is required.', 400);
+      return;
+    }
+
+    const user = await User.findOne({ email: email.toLowerCase() });
+
+    if (!user) {
+      // Prevent user enumeration
+      sendSuccess(res, null, 'If this account exists, an OTP has been sent.');
+      return;
+    }
+
+    if (user.isVerified) {
+      sendSuccess(res, null, 'Email is already verified.');
+      return;
+    }
+
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+
+    await User.findByIdAndUpdate(user._id, {
+      otp,
+      otpExpires: new Date(Date.now() + 5 * 60 * 1000), // 5 min — same as register
+    });
+
+    await sendOTPEmail(user.email, otp);
+
+    sendSuccess(res, null, 'OTP sent to your email.');
   } catch (error) {
     next(error);
   }

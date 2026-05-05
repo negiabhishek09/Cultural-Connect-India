@@ -1,4 +1,5 @@
 "use strict";
+// Event.model.ts — COMPLETE FILE (replace existing)
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
     var desc = Object.getOwnPropertyDescriptor(m, k);
@@ -35,6 +36,12 @@ var __importStar = (this && this.__importStar) || (function () {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Event = void 0;
 const mongoose_1 = __importStar(require("mongoose"));
+const RegistrationSchema = new mongoose_1.Schema({
+    user: { type: mongoose_1.Schema.Types.ObjectId, ref: 'User', required: true },
+    name: { type: String, required: true },
+    email: { type: String, required: true },
+    registeredAt: { type: Date, default: Date.now },
+}, { _id: false });
 const EventSchema = new mongoose_1.Schema({
     name: { type: String, required: true, trim: true },
     slug: { type: String, required: true, unique: true, lowercase: true },
@@ -50,6 +57,7 @@ const EventSchema = new mongoose_1.Schema({
     isActive: { type: Boolean, default: true },
     isFeatured: { type: Boolean, default: false },
     viewCount: { type: Number, default: 0 },
+    registrations: { type: [RegistrationSchema], default: [] }, // ✅ NEW
 }, {
     timestamps: true,
     toJSON: {
@@ -59,9 +67,9 @@ const EventSchema = new mongoose_1.Schema({
         },
     },
 });
-// ✅ KEEP THESE (important indexes)
 EventSchema.index({ stateId: 1 });
 EventSchema.index({ categoryId: 1 });
 EventSchema.index({ isFeatured: -1, startDate: 1 });
 EventSchema.index({ startDate: 1, isActive: 1 });
+EventSchema.index({ 'registrations.user': 1 }); // ✅ NEW — my-registrations query fast
 exports.Event = mongoose_1.default.models.Event || mongoose_1.default.model('Event', EventSchema);

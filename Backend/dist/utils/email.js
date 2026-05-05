@@ -13,25 +13,21 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.sendBookingConfirmationEmail = exports.sendEventRegistrationEmail = exports.sendOrderConfirmationEmail = exports.sendOTPEmail = exports.sendWelcomeEmail = exports.sendEmail = void 0;
-const nodemailer_1 = __importDefault(require("nodemailer"));
+const axios_1 = __importDefault(require("axios"));
 const logger_1 = require("../config/logger");
-// Transporter ek baar banao
-const transporter = nodemailer_1.default.createTransport({
-    host: "smtp-relay.brevo.com",
-    port: 587,
-    secure: false,
-    auth: {
-        user: process.env.BREVO_USER,
-        pass: process.env.BREVO_PASS,
-    },
-});
+logger_1.logger.info('✅ Brevo API ready');
 const sendEmail = (options) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        yield transporter.sendMail({
-            from: `"Cultural Connect India" <${process.env.BREVO_USER}>`,
-            to: options.to,
+        yield axios_1.default.post('https://api.brevo.com/v3/smtp/email', {
+            sender: { email: 'ajaynegi910@gmail.com', name: 'Cultural Connect India' },
+            to: [{ email: options.to }],
             subject: options.subject,
-            html: options.html,
+            htmlContent: options.html,
+        }, {
+            headers: {
+                'api-key': process.env.BREVO_API_KEY,
+                'Content-Type': 'application/json',
+            },
         });
         logger_1.logger.info(`Email sent → ${options.to}: ${options.subject}`);
     }

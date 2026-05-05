@@ -21,14 +21,14 @@ const transporter = nodemailer_1.default.createTransport({
     port: 587,
     secure: false,
     auth: {
-        user: process.env.BREVO_USER,
-        pass: process.env.BREVO_PASS,
-    },
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_KEY,
+    }
 });
 const sendEmail = (options) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         yield transporter.sendMail({
-            from: `"Cultural Connect India" <${process.env.BREVO_USER}>`,
+            from: `"Cultural Connect India" <ajaynegi910@gmail.com>`,
             to: options.to,
             subject: options.subject,
             html: options.html,

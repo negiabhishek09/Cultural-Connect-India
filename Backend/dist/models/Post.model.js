@@ -38,11 +38,17 @@ const mongoose_1 = __importStar(require("mongoose"));
 const CommentSchema = new mongoose_1.Schema({
     userId: { type: mongoose_1.Schema.Types.ObjectId, ref: 'User', required: true },
     content: { type: String, required: true, trim: true, maxlength: 1000 },
-    createdAt: { type: Date, default: Date.now }, // ✅ broken link fix
+    createdAt: { type: Date, default: Date.now },
 }, { _id: true });
 const PostSchema = new mongoose_1.Schema({
     caption: { type: String, required: true, trim: true, maxlength: 2200 },
-    image: { type: String, required: true },
+    image: { type: String },
+    video: { type: String },
+    mediaType: {
+        type: String,
+        enum: ['image', 'video'],
+        default: 'image',
+    },
     location: { type: String, maxlength: 200 },
     userId: { type: mongoose_1.Schema.Types.ObjectId, ref: 'User', required: true },
     categoryId: { type: mongoose_1.Schema.Types.ObjectId, ref: 'Category' },
@@ -59,6 +65,8 @@ const PostSchema = new mongoose_1.Schema({
         },
     },
 });
+// ✅ pre('save') hook HATA DIYA — controller mein validation hogi
+// Hook ki wajah se "next is not a function" crash aa raha tha
 PostSchema.index({ userId: 1 });
 PostSchema.index({ categoryId: 1 });
 PostSchema.index({ createdAt: -1 });

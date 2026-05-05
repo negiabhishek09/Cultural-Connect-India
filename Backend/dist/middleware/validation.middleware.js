@@ -72,6 +72,8 @@ exports.updateOrderStatusSchema = zod_1.z.object({
 exports.createPostSchema = zod_1.z.object({
     caption: zod_1.z.string().min(1).max(500),
     image: zod_1.z.string().optional(),
+    video: zod_1.z.string().optional(), // ✅ NEW
+    mediaType: zod_1.z.enum(['image', 'video']).optional(), // ✅ NEW
     location: zod_1.z.string().optional(),
     categoryId: zod_1.z.string().optional(),
 });

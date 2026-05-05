@@ -1,5 +1,3 @@
-
-
 import mongoose, { Document, Schema } from 'mongoose';
 
 export type PostMediaType = 'image' | 'video';
@@ -14,9 +12,9 @@ export interface IComment {
 export interface IPost extends Document {
   _id: mongoose.Types.ObjectId;
   caption: string;
-  image?: string;           // optional ab — image ya video mein se ek hoga
-  video?: string;           // ✅ NEW
-  mediaType: PostMediaType; // ✅ NEW — 'image' | 'video'
+  image?: string;
+  video?: string;
+  mediaType: PostMediaType;
   location?: string;
   userId: mongoose.Types.ObjectId;
   categoryId?: mongoose.Types.ObjectId;
@@ -40,15 +38,15 @@ const CommentSchema = new Schema<IComment>(
 const PostSchema = new Schema<IPost>(
   {
     caption:   { type: String, required: true, trim: true, maxlength: 2200 },
-    image:     { type: String },                // ✅ required hata diya
-    video:     { type: String },                // ✅ NEW
-    mediaType: {                                // ✅ NEW
+    image:     { type: String },
+    video:     { type: String },
+    mediaType: {
       type: String,
       enum: ['image', 'video'],
       default: 'image',
     },
     location:   { type: String, maxlength: 200 },
-    userId:     { type: Schema.Types.ObjectId, ref: 'User',     required: true },
+    userId:     { type: Schema.Types.ObjectId, ref: 'User', required: true },
     categoryId: { type: Schema.Types.ObjectId, ref: 'Category' },
     likes:   [{ type: Schema.Types.ObjectId, ref: 'User' }],
     savedBy: [{ type: Schema.Types.ObjectId, ref: 'User' }],
@@ -66,15 +64,8 @@ const PostSchema = new Schema<IPost>(
   }
 );
 
-// ✅ Validation — image ya video mein se ek zaroori
-PostSchema.pre('save', function (this: IPost, next: (err?: Error) => void) {
-  if (!this.image && !this.video) {
-    return next(new Error('Post mein image ya video mein se ek zaroori hai.'));
-  }
-  if (this.video) this.mediaType = 'video';
-  else this.mediaType = 'image';
-  next();
-});
+// ✅ pre('save') hook HATA DIYA — controller mein validation hogi
+// Hook ki wajah se "next is not a function" crash aa raha tha
 
 PostSchema.index({ userId: 1 });
 PostSchema.index({ categoryId: 1 });

@@ -5,6 +5,9 @@ import { toast } from 'sonner';
 import { useApp } from '../../context/AppContext';
 import { API } from '../../api/axios';
 
+const CLOUD_NAME = 'dgultnzuv';
+const UPLOAD_PRESET = 'cultural-connect-india';
+
 interface CreatePostModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -45,6 +48,24 @@ export function CreatePostModal({ isOpen, onClose, onPostCreated }: CreatePostMo
     setPreview(URL.createObjectURL(file));
   };
 
+  const uploadToCloudinary = async (file: File): Promise<string> => {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('upload_preset', UPLOAD_PRESET);
+    formData.append('folder', 'cultural-connect/posts');
+
+    const resourceType = file.type.startsWith('video/') ? 'video' : 'image';
+
+    const res = await fetch(
+      `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/${resourceType}/upload`,
+      { method: 'POST', body: formData }
+    );
+
+    if (!res.ok) throw new Error('Cloudinary upload failed');
+    const data = await res.json();
+    return data.secure_url;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) { toast.error('Pehle login karo'); return; }
@@ -53,20 +74,25 @@ export function CreatePostModal({ isOpen, onClose, onPostCreated }: CreatePostMo
 
     setIsLoading(true);
     try {
-      const formData = new FormData();
-      formData.append('caption', caption);
-      formData.append(mediaType, mediaFile);
-      if (location.trim()) formData.append('location', location);
+      // Step 1 — Cloudinary pe upload
+      toast.loading('Upload ho raha hai...', { id: 'upload' });
+      const mediaUrl = await uploadToCloudinary(mediaFile);
+      toast.dismiss('upload');
 
-      const res = await API.post('/posts', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
+      // Step 2 — Backend pe save
+      const payload: any = { caption, mediaType };
+      if (mediaType === 'image') payload.image = mediaUrl;
+      if (mediaType === 'video') payload.video = mediaUrl;
+      if (location.trim()) payload.location = location;
+
+      const res = await API.post('/posts', payload);
 
       toast.success('Post create ho gayi!');
       onPostCreated?.(res.data.data);
       handleClose();
     } catch (err: any) {
-      toast.error(err?.response?.data?.message || 'Post nahi bani, dobara try karo');
+      toast.dismiss('upload');
+      toast.error(err?.response?.data?.message || 'Try again later');
     } finally {
       setIsLoading(false);
     }
@@ -233,7 +259,7 @@ export function CreatePostModal({ isOpen, onClose, onPostCreated }: CreatePostMo
                   whileTap={{ scale: 0.98 }}
                   disabled={isLoading}
                 >
-                  {isLoading ? 'Posting...' : 'Post'}
+                  {isLoading ? 'Uploading...' : 'Post'}
                 </motion.button>
               </div>
             </form>

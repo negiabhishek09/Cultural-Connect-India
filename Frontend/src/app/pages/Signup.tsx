@@ -21,6 +21,7 @@ export function Signup() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    // ── Validations ──────────────────────────────────────────────
     if (!formData.name || !formData.email || !formData.password) {
       toast.error('Please fill in all fields');
       return;
@@ -44,10 +45,10 @@ export function Signup() {
 
       const { user, accessToken } = res.data.data;
 
-      // token save karo
+      // Token save karo
       localStorage.setItem('token', accessToken);
 
-      // user context mein save karo (role backend se aayega)
+      // User context mein save karo
       login({
         name: user.name,
         email: user.email,
@@ -55,8 +56,9 @@ export function Signup() {
         avatar: user.avatar || '',
       });
 
-      toast.success('Account created successfully! Welcome!');
-      navigate('/profile');
+      // ✅ FIX: Pehle toast dikhe, phir 1.5s baad navigate ho
+      toast.success('Account created successfully! Welcome! 🎉');
+      setTimeout(() => navigate('/profile'), 1500);
 
     } catch (err: any) {
       const msg = err?.response?.data?.message || 'Signup failed. Please try again.';
@@ -196,11 +198,35 @@ export function Signup() {
             <motion.button
               type="submit"
               className="w-full py-4 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-2xl font-bold text-lg hover:shadow-xl transition-all disabled:opacity-50"
-              whileHover={{ scale: 1.02, y: -2 }}
-              whileTap={{ scale: 0.98 }}
+              whileHover={{ scale: isLoading ? 1 : 1.02, y: isLoading ? 0 : -2 }}
+              whileTap={{ scale: isLoading ? 1 : 0.98 }}
               disabled={isLoading}
             >
-              {isLoading ? 'Creating Account...' : 'Create Account'}
+              {isLoading ? (
+                <span className="flex items-center justify-center gap-2">
+                  {/* Spinner */}
+                  <svg
+                    className="animate-spin h-5 w-5 text-white"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12" cy="12" r="10"
+                      stroke="currentColor" strokeWidth="4"
+                    />
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8v8z"
+                    />
+                  </svg>
+                  Creating Account...
+                </span>
+              ) : (
+                'Create Account'
+              )}
             </motion.button>
           </form>
 

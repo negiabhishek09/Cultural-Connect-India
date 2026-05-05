@@ -21,7 +21,7 @@ const transporter = nodemailer.createTransport({
 export const sendEmail = async (options: EmailOptions): Promise<void> => {
   try {
     await transporter.sendMail({
-      from: `"Cultural Connect India" <${process.env.BREVO_USER}>`,
+      from: `"Cultural Connect India" <ajaynegi910@gmail.com>`,
       to: options.to,
       subject: options.subject,
       html: options.html,

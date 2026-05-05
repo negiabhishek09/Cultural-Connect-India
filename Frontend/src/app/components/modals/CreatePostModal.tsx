@@ -1,6 +1,6 @@
 import { motion, AnimatePresence } from 'motion/react';
-import { X, Image, Video, MapPin, Tag } from 'lucide-react';
-import { useState } from 'react';
+import { X, Image, Video, MapPin, Upload } from 'lucide-react';
+import { useState, useRef } from 'react';
 import { toast } from 'sonner';
 import { useApp } from '../../context/AppContext';
 import { API } from '../../api/axios';
@@ -15,39 +15,55 @@ export function CreatePostModal({ isOpen, onClose, onPostCreated }: CreatePostMo
   const { user } = useApp();
   const [caption, setCaption] = useState('');
   const [mediaType, setMediaType] = useState<'image' | 'video'>('image');
-  const [imageUrl, setImageUrl] = useState('');
-  const [videoUrl, setVideoUrl] = useState('');
+  const [mediaFile, setMediaFile] = useState<File | null>(null);
+  const [preview, setPreview] = useState<string | null>(null);
   const [location, setLocation] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleClose = () => {
     setCaption('');
-    setImageUrl('');
-    setVideoUrl('');
+    setMediaFile(null);
+    setPreview(null);
     setLocation('');
     setMediaType('image');
+    if (fileInputRef.current) fileInputRef.current.value = '';
     onClose();
+  };
+
+  const handleMediaTypeChange = (type: 'image' | 'video') => {
+    setMediaType(type);
+    setMediaFile(null);
+    setPreview(null);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setMediaFile(file);
+    setPreview(URL.createObjectURL(file));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) { toast.error('Pehle login karo'); return; }
     if (!caption.trim()) { toast.error('Caption zaroori hai'); return; }
-    if (mediaType === 'image' && !imageUrl.trim()) { toast.error('Image URL daalo'); return; }
-    if (mediaType === 'video' && !videoUrl.trim()) { toast.error('Video URL daalo'); return; }
+    if (!mediaFile) { toast.error(mediaType === 'image' ? 'Photo select karo' : 'Video select karo'); return; }
 
     setIsLoading(true);
     try {
-      const payload: any = { caption };
-      if (mediaType === 'image') payload.image = imageUrl;
-      if (mediaType === 'video') payload.video = videoUrl;
-      if (location.trim()) payload.location = location;
+      const formData = new FormData();
+      formData.append('caption', caption);
+      formData.append(mediaType, mediaFile);
+      if (location.trim()) formData.append('location', location);
 
-      const res = await API.post('/posts', payload);
-      const newPost = res.data.data;
+      const res = await API.post('/posts', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
 
       toast.success('Post create ho gayi!');
-      onPostCreated?.(newPost);
+      onPostCreated?.(res.data.data);
       handleClose();
     } catch (err: any) {
       toast.error(err?.response?.data?.message || 'Post nahi bani, dobara try karo');
@@ -103,7 +119,7 @@ export function CreatePostModal({ isOpen, onClose, onPostCreated }: CreatePostMo
                 <div className="flex gap-3">
                   <button
                     type="button"
-                    onClick={() => setMediaType('image')}
+                    onClick={() => handleMediaTypeChange('image')}
                     className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl border-2 font-medium text-sm transition-all ${
                       mediaType === 'image'
                         ? 'border-orange-500 bg-orange-50 text-orange-600'
@@ -111,11 +127,11 @@ export function CreatePostModal({ isOpen, onClose, onPostCreated }: CreatePostMo
                     }`}
                   >
                     <Image className="w-4 h-4" />
-                    Image
+                    Photo
                   </button>
                   <button
                     type="button"
-                    onClick={() => setMediaType('video')}
+                    onClick={() => handleMediaTypeChange('video')}
                     className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl border-2 font-medium text-sm transition-all ${
                       mediaType === 'video'
                         ? 'border-orange-500 bg-orange-50 text-orange-600'
@@ -128,55 +144,59 @@ export function CreatePostModal({ isOpen, onClose, onPostCreated }: CreatePostMo
                 </div>
               </div>
 
-              {/* Image URL */}
-              {mediaType === 'image' && (
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Image URL</label>
-                  <div className="relative">
-                    <Image className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                    <input
-                      type="url"
-                      value={imageUrl}
-                      onChange={(e) => setImageUrl(e.target.value)}
-                      placeholder="https://example.com/image.jpg"
-                      className="w-full pl-12 pr-4 py-3 bg-gray-50 border-2 border-gray-200 rounded-xl focus:border-orange-500 focus:bg-white focus:outline-none"
-                    />
-                  </div>
-                  {imageUrl && (
-                    <img
-                      src={imageUrl}
-                      alt="preview"
-                      className="mt-2 w-full h-40 object-cover rounded-xl"
-                      onError={(e) => (e.currentTarget.style.display = 'none')}
-                    />
-                  )}
-                </div>
-              )}
+              {/* File Picker */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  {mediaType === 'image' ? 'Photo' : 'Video'} Select karo
+                </label>
 
-              {/* Video URL */}
-              {mediaType === 'video' && (
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Video URL</label>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept={mediaType === 'image' ? 'image/*' : 'video/*'}
+                  onChange={handleFileChange}
+                  className="hidden"
+                />
+
+                {!preview ? (
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="w-full flex flex-col items-center justify-center gap-2 py-8 border-2 border-dashed border-gray-300 rounded-xl text-gray-500 hover:border-orange-400 hover:text-orange-500 hover:bg-orange-50 transition-all"
+                  >
+                    <Upload className="w-8 h-8" />
+                    <span className="text-sm font-medium">
+                      {mediaType === 'image' ? 'Photo choose karo' : 'Video choose karo'}
+                    </span>
+                    <span className="text-xs text-gray-400">
+                      {mediaType === 'image' ? 'JPG, PNG, WEBP' : 'MP4, MOV, AVI'}
+                    </span>
+                  </button>
+                ) : (
                   <div className="relative">
-                    <Video className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                    <input
-                      type="url"
-                      value={videoUrl}
-                      onChange={(e) => setVideoUrl(e.target.value)}
-                      placeholder="https://example.com/video.mp4"
-                      className="w-full pl-12 pr-4 py-3 bg-gray-50 border-2 border-gray-200 rounded-xl focus:border-orange-500 focus:bg-white focus:outline-none"
-                    />
+                    {mediaType === 'image' ? (
+                      <img
+                        src={preview}
+                        alt="preview"
+                        className="w-full h-48 object-cover rounded-xl"
+                      />
+                    ) : (
+                      <video
+                        src={preview}
+                        controls
+                        className="w-full rounded-xl max-h-48"
+                      />
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="absolute bottom-2 right-2 px-3 py-1 bg-black/60 text-white text-xs rounded-lg hover:bg-black/80 transition-all"
+                    >
+                      Change
+                    </button>
                   </div>
-                  {videoUrl && (
-                    <video
-                      src={videoUrl}
-                      controls
-                      className="mt-2 w-full rounded-xl max-h-40"
-                    />
-                  )}
-                  <p className="text-xs text-gray-500 mt-1">Direct .mp4 link ya hosted video URL</p>
-                </div>
-              )}
+                )}
+              </div>
 
               {/* Location */}
               <div>

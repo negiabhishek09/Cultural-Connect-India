@@ -1,5 +1,6 @@
 import nodemailer from 'nodemailer';
 import { logger } from '../config/logger';
+ 
 
 interface EmailOptions {
   to: string;
@@ -13,8 +14,8 @@ const transporter = nodemailer.createTransport({
   port: 587,
   secure: false,
   auth: {
-    user: process.env.BREVO_USER,
-    pass: process.env.BREVO_PASS,
+    user: "aa2625001@smtp-brevo.com",
+    pass: "xsmtpsib-5d9674812ac8fe1542b3ad3cd26059b2c5bd46a5b44e41b5bf46cd05acfcefda-dKBs8XxyD698xuL3",
   },
 });
 

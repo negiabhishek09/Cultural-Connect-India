@@ -1,6 +1,6 @@
 import nodemailer from 'nodemailer';
 import { logger } from '../config/logger';
- 
+
 
 interface EmailOptions {
   to: string;
@@ -14,9 +14,9 @@ const transporter = nodemailer.createTransport({
   port: 587,
   secure: false,
   auth: {
-    user: "aa2625001@smtp-brevo.com",
-    pass: "xsmtpsib-5d9674812ac8fe1542b3ad3cd26059b2c5bd46a5b44e41b5bf46cd05acfcefda-dKBs8XxyD698xuL3",
-  },
+    user: process.env.SMTP_USER,
+    pass: process.env.SMTP_KEY,
+  }
 });
 
 export const sendEmail = async (options: EmailOptions): Promise<void> => {
@@ -34,12 +34,12 @@ export const sendEmail = async (options: EmailOptions): Promise<void> => {
   }
 };
 
-  // ✅ Welcome email
-  export const sendWelcomeEmail = (name: string, email: string) =>
-    sendEmail({
-      to: email,
-      subject: 'Welcome to Cultural Connect India 🇮🇳',
-      html: `
+// ✅ Welcome email
+export const sendWelcomeEmail = (name: string, email: string) =>
+  sendEmail({
+    to: email,
+    subject: 'Welcome to Cultural Connect India 🇮🇳',
+    html: `
         <div style="font-family:sans-serif;max-width:600px;margin:0 auto;">
           <div style="background:linear-gradient(135deg,#f97316,#ea580c);padding:32px;border-radius:12px 12px 0 0;">
             <h1 style="color:#fff;margin:0;font-size:26px;">Cultural Connect India</h1>
@@ -57,14 +57,14 @@ export const sendEmail = async (options: EmailOptions): Promise<void> => {
             </a>
           </div>
         </div>`,
-    });
+  });
 
-  // ✅ OTP email
-  export const sendOTPEmail = async (email: string, otp: string) => {
-    await sendEmail({
-      to: email,
-      subject: 'Your OTP Code — Culture Connect India',
-      html: `
+// ✅ OTP email
+export const sendOTPEmail = async (email: string, otp: string) => {
+  await sendEmail({
+    to: email,
+    subject: 'Your OTP Code — Culture Connect India',
+    html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
           <h2 style="color: #ea580c;">Your OTP Code</h2>
           <div style="background: #fff7ed; border-radius: 8px; padding: 20px; text-align: center;">
@@ -73,20 +73,20 @@ export const sendEmail = async (options: EmailOptions): Promise<void> => {
           <p style="color: #6b7280;">Yeh OTP 5 minutes mein expire ho jayega.</p>
         </div>
       `,
-    });
-  };
+  });
+};
 
-  // ✅ Order confirmation email
-  export const sendOrderConfirmationEmail = (
-    name: string,
-    email: string,
-    orderId: string,
-    totalAmount: number
-  ) =>
-    sendEmail({
-      to: email,
-      subject: `Order Confirmed #${orderId.slice(-8).toUpperCase()} 🎊`,
-      html: `
+// ✅ Order confirmation email
+export const sendOrderConfirmationEmail = (
+  name: string,
+  email: string,
+  orderId: string,
+  totalAmount: number
+) =>
+  sendEmail({
+    to: email,
+    subject: `Order Confirmed #${orderId.slice(-8).toUpperCase()} 🎊`,
+    html: `
         <div style="font-family:sans-serif;max-width:600px;margin:0 auto;">
           <div style="background:linear-gradient(135deg,#f97316,#ea580c);padding:32px;border-radius:12px 12px 0 0;">
             <h1 style="color:#fff;margin:0;">Order Confirmed! 🎊</h1>
@@ -103,32 +103,32 @@ export const sendEmail = async (options: EmailOptions): Promise<void> => {
             </a>
           </div>
         </div>`,
-    });
+  });
 
-  // ✅ Event registration email
-  export const sendEventRegistrationEmail = async (
-    email: string,
-    name: string,
-    event: {
-      name: string;
-      startDate: Date;
-      endDate: Date;
-      location: string;
-      venue?: string;
-      tag: string;
-    }
-  ) => {
-    const startDate = new Date(event.startDate).toLocaleDateString('en-IN', {
-      weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
-    });
-    const endDate = new Date(event.endDate).toLocaleDateString('en-IN', {
-      weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
-    });
+// ✅ Event registration email
+export const sendEventRegistrationEmail = async (
+  email: string,
+  name: string,
+  event: {
+    name: string;
+    startDate: Date;
+    endDate: Date;
+    location: string;
+    venue?: string;
+    tag: string;
+  }
+) => {
+  const startDate = new Date(event.startDate).toLocaleDateString('en-IN', {
+    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
+  });
+  const endDate = new Date(event.endDate).toLocaleDateString('en-IN', {
+    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
+  });
 
-    await sendEmail({
-      to: email,
-      subject: `✅ Event Registration Confirmed — ${event.name}`,
-      html: `
+  await sendEmail({
+    to: email,
+    subject: `✅ Event Registration Confirmed — ${event.name}`,
+    html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e5e7eb; border-radius: 12px; overflow: hidden;">
           <div style="background: linear-gradient(135deg, #ea580c, #f97316); padding: 30px; text-align: center;">
             <h1 style="color: white; margin: 0;">Culture Connect India</h1>
@@ -177,31 +177,31 @@ export const sendEmail = async (options: EmailOptions): Promise<void> => {
           </div>
         </div>
       `,
-    });
-  };
+  });
+};
 
-  // ✅ Booking confirmation email
-  export const sendBookingConfirmationEmail = async (
-    email: string,
-    name: string,
-    booking: {
-      title: string;
-      price: string;
-      date?: string;
-      guests?: number;
-      phone?: string;
-    }
-  ) => {
-    const bookingDate = booking.date
-      ? new Date(booking.date).toLocaleDateString('en-IN', {
-          weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
-        })
-      : 'Date TBD';
+// ✅ Booking confirmation email
+export const sendBookingConfirmationEmail = async (
+  email: string,
+  name: string,
+  booking: {
+    title: string;
+    price: string;
+    date?: string;
+    guests?: number;
+    phone?: string;
+  }
+) => {
+  const bookingDate = booking.date
+    ? new Date(booking.date).toLocaleDateString('en-IN', {
+      weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
+    })
+    : 'Date TBD';
 
-    await sendEmail({
-      to: email,
-      subject: `✅ Booking Confirmed — ${booking.title}`,
-      html: `
+  await sendEmail({
+    to: email,
+    subject: `✅ Booking Confirmed — ${booking.title}`,
+    html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e5e7eb; border-radius: 12px; overflow: hidden;">
           <div style="background: linear-gradient(135deg, #ea580c, #f97316); padding: 30px; text-align: center;">
             <h1 style="color: white; margin: 0;">Culture Connect India</h1>
@@ -242,5 +242,5 @@ export const sendEmail = async (options: EmailOptions): Promise<void> => {
           </div>
         </div>
       `,
-    });
-  };
+  });
+};

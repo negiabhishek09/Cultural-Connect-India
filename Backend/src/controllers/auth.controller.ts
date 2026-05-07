@@ -40,8 +40,9 @@ export const register = async (req: Request, res: Response, next: NextFunction):
       refreshToken: hashedRefreshToken,
     });
 
-    await sendWelcomeEmail(user.name, user.email);
-    await sendOTPEmail(user.email, otp);
+    // ✅ FIX: Fire & forget — await nahi, background mein jayengi
+    sendWelcomeEmail(user.name, user.email).catch((e) => console.error('Welcome email failed:', e));
+    sendOTPEmail(user.email, otp).catch((e) => console.error('OTP email failed:', e));
 
     const safeUser = await User.findById(user._id);
 
@@ -188,7 +189,7 @@ export const googleAuth = async (req: Request, res: Response, next: NextFunction
         avatar: picture,
         isVerified: true,
       });
-      await sendWelcomeEmail(user.name, user.email);
+      sendWelcomeEmail(user.name, user.email).catch((e) => console.error('Welcome email failed:', e));
     }
 
     const tokenPayload = { id: user._id.toString(), email: user.email, role: user.role };
@@ -213,7 +214,6 @@ export const forgotPassword = async (req: Request, res: Response, next: NextFunc
 
     const user = await User.findOne({ email: email.toLowerCase() });
     if (!user) {
-      // Security: same response even if email doesn't exist (prevents user enumeration)
       sendSuccess(res, null, 'If this email exists, an OTP has been sent.');
       return;
     }
@@ -222,7 +222,7 @@ export const forgotPassword = async (req: Request, res: Response, next: NextFunc
 
     await User.findByIdAndUpdate(user._id, {
       otp,
-      otpExpires: new Date(Date.now() + 10 * 60 * 1000), // 10 min (was 5 min)
+      otpExpires: new Date(Date.now() + 10 * 60 * 1000),
     });
 
     await sendOTPEmail(user.email, otp);
@@ -234,7 +234,6 @@ export const forgotPassword = async (req: Request, res: Response, next: NextFunc
 };
 
 // POST /api/v1/auth/verify-otp
-// Validates OTP — returns otpVerified flag so frontend can proceed to step 3
 export const verifyOtp = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const { email, otp } = req.body;
@@ -266,8 +265,6 @@ export const verifyOtp = async (req: Request, res: Response, next: NextFunction)
       return;
     }
 
-    // OTP sahi hai — mark verified in DB so reset-password can trust this session
-    // We reuse otpExpires: extend by 15 min for password reset window
     await User.findByIdAndUpdate(user._id, {
       otpExpires: new Date(Date.now() + 15 * 60 * 1000),
     });
@@ -279,7 +276,6 @@ export const verifyOtp = async (req: Request, res: Response, next: NextFunction)
 };
 
 // POST /api/v1/auth/reset-password
-// Called after verify-otp — checks otp + expiry again as a second guard
 export const resetPassword = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const { email, otp, newPassword } = req.body;
@@ -306,7 +302,6 @@ export const resetPassword = async (req: Request, res: Response, next: NextFunct
       return;
     }
 
-    // Re-validate OTP as a second guard (prevents direct API abuse skipping verify step)
     if (user.otp !== otp) {
       sendError(res, 'Invalid OTP.', 400);
       return;
@@ -317,11 +312,9 @@ export const resetPassword = async (req: Request, res: Response, next: NextFunct
       return;
     }
 
-    // Update password (pre-save hook in User model handles hashing)
     user.password = newPassword;
     await user.save();
 
-    // Clear OTP fields
     await User.findByIdAndUpdate(user._id, {
       $unset: { otp: 1, otpExpires: 1 },
     });
@@ -331,12 +324,8 @@ export const resetPassword = async (req: Request, res: Response, next: NextFunct
     next(error);
   }
 };
-// ─────────────────────────────────────────────────────────────
-// ADD THIS to auth.controller.ts
-// POST /api/v1/auth/verify-email
-// Called after register — user submits OTP sent to their email
-// ─────────────────────────────────────────────────────────────
 
+// POST /api/v1/auth/verify-email
 export const verifyEmail = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const { email, otp } = req.body;
@@ -353,7 +342,6 @@ export const verifyEmail = async (req: Request, res: Response, next: NextFunctio
       return;
     }
 
-    // Already verified — idempotent response
     if (user.isVerified) {
       sendSuccess(res, null, 'Email is already verified.');
       return;
@@ -374,7 +362,6 @@ export const verifyEmail = async (req: Request, res: Response, next: NextFunctio
       return;
     }
 
-    // Mark verified + clear OTP fields
     await User.findByIdAndUpdate(user._id, {
       isVerified: true,
       $unset: { otp: 1, otpExpires: 1 },
@@ -386,11 +373,7 @@ export const verifyEmail = async (req: Request, res: Response, next: NextFunctio
   }
 };
 
-// ─────────────────────────────────────────────────────────────
 // POST /api/v1/auth/resend-verification-otp
-// User ne OTP miss kiya ya expire ho gaya — resend karo
-// ─────────────────────────────────────────────────────────────
-
 export const resendVerificationOtp = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const { email } = req.body;
@@ -403,7 +386,6 @@ export const resendVerificationOtp = async (req: Request, res: Response, next: N
     const user = await User.findOne({ email: email.toLowerCase() });
 
     if (!user) {
-      // Prevent user enumeration
       sendSuccess(res, null, 'If this account exists, an OTP has been sent.');
       return;
     }
@@ -417,7 +399,7 @@ export const resendVerificationOtp = async (req: Request, res: Response, next: N
 
     await User.findByIdAndUpdate(user._id, {
       otp,
-      otpExpires: new Date(Date.now() + 5 * 60 * 1000), // 5 min — same as register
+      otpExpires: new Date(Date.now() + 5 * 60 * 1000),
     });
 
     await sendOTPEmail(user.email, otp);
